@@ -53,7 +53,7 @@
   .newbtn { margin-left:auto; padding:6px 12px; border:1px solid #2dd4bf; border-radius:8px; background:transparent; color:#2dd4bf; font-size:13px; font-weight:600; cursor:pointer; }
   body.f-arbeit [data-notebook="Privat"] { display:none; }
   body.f-privat [data-notebook="Arbeit"] { display:none; }
-  #newdlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:20; padding:16px; }
+  #newdlg, #notedlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:20; padding:16px; }
   .ed-box select { width:100%; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
   #nw-prio { display:flex; gap:6px; }
   #nw-prio .pbtn { flex:1; padding:8px 0; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; font-size:13px; }
@@ -130,6 +130,13 @@
     <label class="ed-lab">Notiz</label>
     <textarea id="nw-note" rows="2"></textarea>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeNew()">Abbrechen</button><button class="ed-ok" onclick="saveNew()">Anlegen</button></div>
+  </div>
+</div>
+<div id="notedlg">
+  <div class="ed-box">
+    <h3>Notiz</h3>
+    <textarea id="nt-note" rows="4"></textarea>
+    <div class="ed-actions"><button class="ed-cancel" onclick="closeNote()">Abbrechen</button><button class="ed-ok" onclick="saveNote()">Speichern</button></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -278,6 +285,26 @@ function openNew(){
   document.getElementById('newdlg').style.display = 'flex';
 }
 function closeNew(){ document.getElementById('newdlg').style.display = 'none'; }
+let noteRow = null;
+function openNote(el){
+  const d = el.closest('[data-id]').dataset;
+  noteRow = { notebook:d.notebook, area:d.area, id:d.id, wiki:d.wiki };
+  document.getElementById('nt-note').value = JSON.parse(d.note || '""');
+  document.getElementById('notedlg').style.display = 'flex';
+}
+function closeNote(){ document.getElementById('notedlg').style.display = 'none'; noteRow = null; }
+async function saveNote(){
+  const d = noteRow;
+  const op = { notebook:d.notebook, area:d.area, id:d.id, note:document.getElementById('nt-note').value };
+  closeNote();
+  if (d.wiki === '1') {
+    await toClipboard(clipboardText([], [op]));
+    toast('Wiki \u2013 in Zwischenablage f\u00fcr Bot');
+    return;
+  }
+  const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), edits:[op] });
+  toast(ok ? 'Notiz gesendet' : 'offline \u2013 gespeichert');
+}
 async function saveNew(){
   const text = document.getElementById('nw-text').value.trim();
   if (!text) { toast('Text fehlt'); return; }
@@ -382,6 +409,7 @@ function clipboardText(done, edits){
     if ('prio' in e) parts.push('Prio: ' + PRIO[e.prio]);
     if ('due' in e) parts.push('F\u00e4llig: ' + (e.due || 'keine'));
     if ('sixt' in e) parts.push('Sixt: ' + (e.sixt === '1' ? 'an' : 'aus'));
+    if ('note' in e) parts.push('Notiz: "' + (e.note || '(leer)') + '"');
     return '- [' + e.area + '] "' + e.id + '" \u2192 ' + parts.join('; ');
   });
   let text = '';
