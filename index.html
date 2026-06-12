@@ -60,6 +60,21 @@
   #nw-prio { display:flex; gap:6px; }
   #nw-prio .pbtn { flex:1; padding:8px 0; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; font-size:13px; }
   #nw-prio .pbtn.sel { background:#2dd4bf; color:#06231f; border-color:#2dd4bf; font-weight:600; }
+  #printhead { display:none; }
+  @media print {
+    body { background:#fff; color:#000; }
+    #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec { display:none !important; }
+    #printhead { display:flex; justify-content:space-between; font-weight:600; border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:12px; }
+    .pane { padding:0; max-width:none; }
+    .pane h4 { color:#000; }
+    .focuscard, .item, .item.sub, .grp { background:#fff !important; color:#000 !important; border-color:#bbb !important; }
+    .grp { border:none !important; }
+    .focuscard { border:1px solid #bbb !important; border-left:3px solid #888 !important; }
+    summary.grp-title, summary.grp-title span, .txt, .area, .due, .prog, .note { color:#000 !important; }
+    .note { border-left:2px solid #999 !important; }
+    .pri { background:#fff !important; color:#000 !important; border:1px solid #555; }
+    .focuscard, .parent, .grp { break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
@@ -78,7 +93,9 @@
       <button data-f="privat" onclick="setFilter(this)">Privat</button>
     </div>
     <button class="newbtn" onclick="openNew()">&#43; Neu</button>
+    <button class="newbtn" onclick="printNow()">&#128424;</button>
   </div>
+  <div id="printhead"></div>
   <main id="content"></main>
   <div id="fallback"><p>Manuell kopieren:</p><textarea id="fallbackText" readonly></textarea></div>
   <div class="toolbar">
@@ -166,6 +183,23 @@ function applyFilter(f){
   }
 }
 function setFilter(b){ const f = b.dataset.f; localStorage.setItem('todoFilter', f); applyFilter(f); }
+function printNow(){
+  const act = document.querySelector('.tab.active');
+  const tabName = act ? act.textContent.trim() : '';
+  let filt = 'Alle';
+  if (document.body.classList.contains('f-arbeit')) filt = 'Arbeit';
+  else if (document.body.classList.contains('f-privat')) filt = 'Privat';
+  const datum = new Date().toLocaleDateString('de-DE');
+  document.getElementById('printhead').innerHTML =
+    '<span>ToDos \u00b7 ' + tabName + ' \u00b7 ' + filt + '</span><span>' + datum + '</span>';
+  const pane = document.querySelector('.pane.active');
+  const dets = pane ? [...pane.querySelectorAll('details')] : [];
+  dets.forEach(d => { if (!d.open) d.dataset.reclose = '1'; d.open = true; });
+  window.print();
+}
+window.addEventListener('afterprint', () => {
+  document.querySelectorAll('details[data-reclose]').forEach(d => { d.open = false; delete d.dataset.reclose; });
+});
 function switchTab(el){
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
