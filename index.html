@@ -52,6 +52,11 @@
   .newbtn { margin-left:auto; padding:6px 12px; border:1px solid #2dd4bf; border-radius:8px; background:transparent; color:#2dd4bf; font-size:13px; font-weight:600; cursor:pointer; }
   body.f-arbeit [data-notebook="Privat"] { display:none; }
   body.f-privat [data-notebook="Arbeit"] { display:none; }
+  #newdlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:20; padding:16px; }
+  .ed-box select { width:100%; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
+  #nw-prio { display:flex; gap:6px; }
+  #nw-prio .pbtn { flex:1; padding:8px 0; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; font-size:13px; }
+  #nw-prio .pbtn.sel { background:#2dd4bf; color:#06231f; border-color:#2dd4bf; font-weight:600; }
 </style>
 </head>
 <body>
@@ -94,6 +99,32 @@
     <div class="ed-row"><input id="ed-due" type="date"><button onclick="clearDue()">keine</button></div>
     <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef (Sixt)</label>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeEditor()">Abbrechen</button><button class="ed-ok" onclick="applyEdit()">Übernehmen</button></div>
+  </div>
+</div>
+<div id="newdlg">
+  <div class="ed-box">
+    <h3>Neues ToDo</h3>
+    <label class="ed-lab">Text</label>
+    <input id="nw-text" type="text">
+    <label class="ed-lab">Notizbuch</label>
+    <div id="nw-nb" class="seg">
+      <button data-v="Arbeit" onclick="pickNb(this)">Arbeit</button>
+      <button data-v="Privat" onclick="pickNb(this)">Privat</button>
+    </div>
+    <label class="ed-lab">Bereich</label>
+    <select id="nw-area" onchange="onAreaChange()"></select>
+    <input id="nw-newsec" type="text" placeholder="Neuer Abschnitt" style="display:none;margin-top:6px">
+    <label class="ed-lab">Priorit&#228;t</label>
+    <div id="nw-prio">
+      <button class="pbtn" data-v="hoch" onclick="pickNewPrio(this)">Hoch</button>
+      <button class="pbtn" data-v="mittel" onclick="pickNewPrio(this)">Mittel</button>
+      <button class="pbtn" data-v="niedrig" onclick="pickNewPrio(this)">Niedrig</button>
+      <button class="pbtn sel" data-v="" onclick="pickNewPrio(this)">keine</button>
+    </div>
+    <label class="ed-lab">F&#228;lligkeit</label>
+    <div class="ed-row"><input id="nw-due" type="date"><button onclick="document.getElementById('nw-due').value=''">keine</button></div>
+    <label class="ed-lab"><input id="nw-sixt" type="checkbox" style="width:auto"> Chef (Sixt)</label>
+    <div class="ed-actions"><button class="ed-cancel" onclick="closeNew()">Abbrechen</button><button class="ed-ok" onclick="saveNew()">Anlegen</button></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -205,6 +236,68 @@ function openEdit(el){
   document.getElementById('editor').style.display = 'flex';
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
+let nwNotebook = 'Arbeit';
+function knownAreas(notebook){
+  const set = new Set();
+  document.querySelectorAll('[data-area][data-notebook]').forEach(el => {
+    if (el.dataset.notebook === notebook && el.dataset.wiki === '0' && el.dataset.area) set.add(el.dataset.area);
+  });
+  return [...set].sort();
+}
+function fillAreas(){
+  const sel = document.getElementById('nw-area');
+  const areas = knownAreas(nwNotebook);
+  sel.innerHTML = areas.map(a => '<option value="' + a + '">' + a + '</option>').join('')
+    + '<option value="__new__">\u2795 neuer Abschnitt\u2026</option>';
+  onAreaChange();
+}
+function onAreaChange(){
+  document.getElementById('nw-newsec').style.display =
+    document.getElementById('nw-area').value === '__new__' ? 'block' : 'none';
+}
+function pickNb(b){
+  document.querySelectorAll('#nw-nb button').forEach(x => x.classList.remove('sel'));
+  b.classList.add('sel'); nwNotebook = b.dataset.v; fillAreas();
+}
+function pickNewPrio(b){ document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
+function openNew(){
+  nwNotebook = 'Arbeit';
+  document.querySelectorAll('#nw-nb button').forEach(x => x.classList.toggle('sel', x.dataset.v === 'Arbeit'));
+  document.getElementById('nw-text').value = '';
+  document.getElementById('nw-due').value = '';
+  document.getElementById('nw-sixt').checked = false;
+  document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.toggle('sel', x.dataset.v === ''));
+  fillAreas();
+  document.getElementById('newdlg').style.display = 'flex';
+}
+function closeNew(){ document.getElementById('newdlg').style.display = 'none'; }
+async function saveNew(){
+  const text = document.getElementById('nw-text').value.trim();
+  if (!text) { toast('Text fehlt'); return; }
+  let area = document.getElementById('nw-area').value;
+  const sections = [];
+  if (area === '__new__') {
+    area = document.getElementById('nw-newsec').value.trim();
+    if (!area) { toast('Abschnittsname fehlt'); return; }
+    sections.push({ op:'add', notebook:nwNotebook, name:area });
+  }
+  const add = { notebook:nwNotebook, area, text };
+  const prioSel = document.querySelector('#nw-prio .pbtn.sel');
+  if (prioSel && prioSel.dataset.v) add.prio = prioSel.dataset.v;
+  const due = document.getElementById('nw-due').value;
+  if (due) add.due = due;
+  if (document.getElementById('nw-sixt').checked) add.sixt = '1';
+  const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), adds:[add], sections });
+  closeNew();
+  toast(ok ? 'angelegt \u2013 an PC gesendet' : 'offline \u2013 gespeichert');
+}
+async function delSection(el){
+  const d = el.dataset;
+  if (!confirm('Abschnitt l\u00f6schen: ' + d.area + '?')) return;
+  const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(),
+    sections:[{ op:'delete', notebook:d.notebook, area:d.area }] });
+  toast(ok ? 'L\u00f6schen gesendet' : 'offline \u2013 gespeichert');
+}
 function clearDue(){ document.getElementById('ed-due').value = ''; }
 function closeEditor(){ document.getElementById('editor').style.display = 'none'; editRow = null; }
 function applyEdit(){
