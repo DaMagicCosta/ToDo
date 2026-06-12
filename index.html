@@ -60,7 +60,7 @@
   <div id="fallback"><p>Manuell kopieren:</p><textarea id="fallbackText" readonly></textarea></div>
   <div class="toolbar">
     <button class="btn-refresh" onclick="refresh()">&#128260; Aktualisieren</button>
-    <button class="btn-copy" onclick="copyAll()">&#128203; An Bot kopieren</button>
+    <button class="btn-copy" onclick="submitChanges()">&#10003; &#220;bernehmen</button>
   </div>
 </div>
 <div id="editor">
@@ -84,6 +84,11 @@
 <div id="toast"></div>
 <script>
 let PIN = null;
+let INBOX = null;
+function parseEnvelope(s){
+  try { const e = JSON.parse(s); if (e && typeof e.html === 'string') return e; } catch(_){}
+  return { html: s, inbox: null };
+}
 function b64(s){ return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
 function toast(msg){
   const el = document.getElementById('toast');
@@ -116,9 +121,10 @@ async function unlock(){
   const err = document.getElementById('err'); err.textContent = '';
   try {
     const payload = await fetchPayload();
-    const frag = await decryptPayload(payload, pin);
+    const env = parseEnvelope(await decryptPayload(payload, pin));
     PIN = pin;
-    document.getElementById('content').innerHTML = frag;
+    INBOX = env.inbox || null;
+    document.getElementById('content').innerHTML = env.html;
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
   } catch (e) {
@@ -129,9 +135,10 @@ async function refresh(){
   if (PIN === null) return;
   try {
     const payload = await fetchPayload();
-    const frag = await decryptPayload(payload, PIN);
+    const env = parseEnvelope(await decryptPayload(payload, PIN));
+    INBOX = env.inbox || INBOX;
     Object.keys(EDITS).forEach(k => delete EDITS[k]);
-    document.getElementById('content').innerHTML = frag;
+    document.getElementById('content').innerHTML = env.html;
     document.getElementById('fallback').style.display = 'none';
     toast('aktualisiert');
   } catch (e) {
@@ -167,7 +174,7 @@ const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,six
 let editRow = null;
 function openEdit(el){
   const d = el.closest('[data-id]').dataset;
-  editRow = { area:d.area, id:d.id, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt };
+  editRow = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt };
   document.getElementById('ed-text').value = d.text;
   document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
   document.getElementById('ed-due').value = d.due || '';
@@ -184,12 +191,12 @@ function applyEdit(){
   const newPrio = sel ? sel.dataset.v : d.prio;
   const newDue = document.getElementById('ed-due').value;
   const newSixt = document.getElementById('ed-sixt').checked ? '1' : '0';
-  const ch = { area:d.area, id:d.id };
+  const ch = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki };
   if (newText && newText !== d.text) ch.text = newText;
   if (newPrio !== d.prio) ch.prio = newPrio;
   if (newDue !== d.due) ch.due = newDue;
   if (newSixt !== d.sixt) ch.sixt = newSixt;
-  if (Object.keys(ch).length > 2) {
+  if (Object.keys(ch).length > 4) {
     EDITS[d.area + '\u0000' + d.id] = ch;
     document.querySelectorAll('[data-id]').forEach(r => {
       if (r.dataset.area === d.area && r.dataset.id === d.id) r.classList.add('edited');
@@ -198,17 +205,31 @@ function applyEdit(){
   }
   closeEditor();
 }
-function collectChecked(){
-  const out = [];
-  document.querySelectorAll('#content .chk:checked').forEach(c => {
-    const d = c.closest('[data-id]').dataset;
-    out.push('- [' + d.area + '] ' + d.id);
-  });
-  return out;
+function b64bytes(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+async function encryptForInbox(obj, pin){
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const km = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt, iterations:250000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['encrypt']);
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)));
+  return { salt:b64bytes(salt), iv:b64bytes(iv), ct:b64bytes(ct), iter:250000 };
 }
-function buildEdits(){
+async function sendInbox(submission){
+  const payload = await encryptForInbox(submission, PIN);
+  const r = await fetch(INBOX.url + '/inbox', {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + INBOX.secret, 'Content-Type':'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) throw new Error('inbox ' + r.status);
+}
+function clipboardText(done, edits){
   const PRIO = { hoch:'hoch', mittel:'mittel', niedrig:'niedrig', '':'keine' };
-  return Object.values(EDITS).map(e => {
+  const dl = done.map(o => '- [' + o.area + '] ' + o.id);
+  const el = edits.map(e => {
     const parts = [];
     if ('text' in e) parts.push('Text: "' + e.text + '"');
     if ('prio' in e) parts.push('Prio: ' + PRIO[e.prio]);
@@ -216,22 +237,55 @@ function buildEdits(){
     if ('sixt' in e) parts.push('Sixt: ' + (e.sixt === '1' ? 'an' : 'aus'));
     return '- [' + e.area + '] "' + e.id + '" \u2192 ' + parts.join('; ');
   });
-}
-async function copyAll(){
-  const done = collectChecked();
-  const edits = buildEdits();
-  if (!done.length && !edits.length) { toast('nichts ausstehend'); return; }
   let text = '';
-  if (done.length) text += '\u2705 Erledigt (vom Dashboard):\n' + done.join('\n') + '\n';
-  if (edits.length) text += (text ? '\n' : '') + '\u270f\ufe0f \u00c4nderungen (vom Dashboard):\n' + edits.join('\n') + '\n';
-  text = text.replace(/\s+$/, '');
-  try {
-    await navigator.clipboard.writeText(text);
-    toast('kopiert');
-  } catch (e) {
+  if (dl.length) text += '\u2705 Erledigt (vom Dashboard):\n' + dl.join('\n') + '\n';
+  if (el.length) text += (text ? '\n' : '') + '\u270f\ufe0f \u00c4nderungen (vom Dashboard):\n' + el.join('\n') + '\n';
+  return text.replace(/\s+$/, '');
+}
+async function toClipboard(text){
+  try { await navigator.clipboard.writeText(text); toast('kopiert'); }
+  catch (e) {
     document.getElementById('fallbackText').value = text;
     document.getElementById('fallback').style.display = 'block';
     toast('manuell kopieren');
+  }
+}
+async function submitChanges(){
+  const inboxDone=[], wikiDone=[], inboxEdits=[], wikiEdits=[];
+  document.querySelectorAll('#content .chk:checked').forEach(c => {
+    const d = c.closest('[data-id]').dataset;
+    const op = { notebook:d.notebook, area:d.area, id:d.id };
+    (d.wiki === '1' ? wikiDone : inboxDone).push(op);
+  });
+  Object.values(EDITS).forEach(e => {
+    const { wiki, ...op } = e;
+    (wiki === '1' ? wikiEdits : inboxEdits).push(op);
+  });
+  const hasInbox = inboxDone.length || inboxEdits.length;
+  const hasWiki = wikiDone.length || wikiEdits.length;
+  if (!hasInbox && !hasWiki) { toast('nichts ausstehend'); return; }
+  let inboxOk = false;
+  if (hasInbox && INBOX && INBOX.url) {
+    try {
+      await sendInbox({ id: Date.now() + '_' + crypto.randomUUID(), done:inboxDone, edits:inboxEdits });
+      inboxOk = true;
+    } catch (e) { inboxOk = false; }
+  }
+  if (inboxOk) {
+    document.querySelectorAll('#content .chk:checked').forEach(c => {
+      if (c.closest('[data-id]').dataset.wiki !== '1') c.checked = false; });
+    Object.keys(EDITS).forEach(k => { if (EDITS[k].wiki !== '1') delete EDITS[k]; });
+    document.querySelectorAll('.edited').forEach(x => {
+      if (x.dataset.wiki !== '1') x.classList.remove('edited'); });
+  }
+  if (hasWiki || (hasInbox && !inboxOk)) {
+    const cbDone = inboxOk ? wikiDone : inboxDone.concat(wikiDone);
+    const cbEdits = inboxOk ? wikiEdits : inboxEdits.concat(wikiEdits);
+    await toClipboard(clipboardText(cbDone, cbEdits));
+    toast(inboxOk ? 'Wiki-Items in Zwischenablage f\u00fcr Bot'
+                  : 'an PC fehlgeschlagen \u2192 manuell an Bot');
+  } else if (inboxOk) {
+    toast('an PC gesendet');
   }
 }
 document.getElementById('pin').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
