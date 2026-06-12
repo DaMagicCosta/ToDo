@@ -31,6 +31,20 @@
   #toast.show { opacity:1; }
   #fallback { display:none; padding:12px 16px; }
   #fallback textarea { width:100%; height:120px; background:#161922; color:#e6e9ef; border:1px solid #232733; border-radius:8px; }
+  #editor { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:20; padding:16px; }
+  .ed-box { width:100%; max-width:360px; background:#161922; border:1px solid #232733; border-radius:12px; padding:16px; }
+  .ed-box h3 { margin:0 0 10px; font-size:16px; }
+  .ed-lab { display:block; font-size:11px; color:#9aa4b2; margin:10px 0 4px; }
+  .ed-box input[type=text], .ed-box input[type=date] { width:100%; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
+  #ed-prio { display:flex; gap:6px; }
+  #ed-prio .pbtn { flex:1; padding:8px 0; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; font-size:13px; }
+  #ed-prio .pbtn.sel { background:#2dd4bf; color:#06231f; border-color:#2dd4bf; font-weight:600; }
+  .ed-row { display:flex; gap:6px; align-items:center; }
+  .ed-row button { padding:8px 12px; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; }
+  .ed-actions { display:flex; gap:8px; margin-top:14px; }
+  .ed-actions button { flex:1; padding:11px; border:0; border-radius:8px; font-weight:600; }
+  .ed-cancel { background:#1f2937; color:#e6e9ef; }
+  .ed-ok { background:#2dd4bf; color:#06231f; }
 </style>
 </head>
 <body>
@@ -46,7 +60,25 @@
   <div id="fallback"><p>Manuell kopieren:</p><textarea id="fallbackText" readonly></textarea></div>
   <div class="toolbar">
     <button class="btn-refresh" onclick="refresh()">&#128260; Aktualisieren</button>
-    <button class="btn-copy" onclick="copyDone()">&#9989; Abschl&#252;sse kopieren</button>
+    <button class="btn-copy" onclick="copyAll()">&#128203; An Bot kopieren</button>
+  </div>
+</div>
+<div id="editor">
+  <div class="ed-box">
+    <h3>ToDo bearbeiten</h3>
+    <label class="ed-lab">Text</label>
+    <input id="ed-text" type="text">
+    <label class="ed-lab">Priorität</label>
+    <div id="ed-prio">
+      <button class="pbtn" data-v="hoch" onclick="pickPrio(this)">Hoch</button>
+      <button class="pbtn" data-v="mittel" onclick="pickPrio(this)">Mittel</button>
+      <button class="pbtn" data-v="niedrig" onclick="pickPrio(this)">Niedrig</button>
+      <button class="pbtn" data-v="" onclick="pickPrio(this)">keine</button>
+    </div>
+    <label class="ed-lab">Fälligkeit</label>
+    <div class="ed-row"><input id="ed-due" type="date"><button onclick="clearDue()">keine</button></div>
+    <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef (Sixt)</label>
+    <div class="ed-actions"><button class="ed-cancel" onclick="closeEditor()">Abbrechen</button><button class="ed-ok" onclick="applyEdit()">Übernehmen</button></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -98,6 +130,7 @@ async function refresh(){
   try {
     const payload = await fetchPayload();
     const frag = await decryptPayload(payload, PIN);
+    Object.keys(EDITS).forEach(k => delete EDITS[k]);
     document.getElementById('content').innerHTML = frag;
     document.getElementById('fallback').style.display = 'none';
     toast('aktualisiert');
@@ -130,24 +163,74 @@ window.addEventListener('touchend', () => {
   pullStartY = null; pullDist = 0;
   if (trigger) refresh();
 }, { passive: true });
+const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?}
+let editRow = null;
+function openEdit(el){
+  const d = el.closest('[data-id]').dataset;
+  editRow = { area:d.area, id:d.id, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt };
+  document.getElementById('ed-text').value = d.text;
+  document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
+  document.getElementById('ed-due').value = d.due || '';
+  document.getElementById('ed-sixt').checked = d.sixt === '1';
+  document.getElementById('editor').style.display = 'flex';
+}
+function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
+function clearDue(){ document.getElementById('ed-due').value = ''; }
+function closeEditor(){ document.getElementById('editor').style.display = 'none'; editRow = null; }
+function applyEdit(){
+  const d = editRow;
+  const newText = document.getElementById('ed-text').value.trim();
+  const sel = document.querySelector('#ed-prio .pbtn.sel');
+  const newPrio = sel ? sel.dataset.v : d.prio;
+  const newDue = document.getElementById('ed-due').value;
+  const newSixt = document.getElementById('ed-sixt').checked ? '1' : '0';
+  const ch = { area:d.area, id:d.id };
+  if (newText && newText !== d.text) ch.text = newText;
+  if (newPrio !== d.prio) ch.prio = newPrio;
+  if (newDue !== d.due) ch.due = newDue;
+  if (newSixt !== d.sixt) ch.sixt = newSixt;
+  if (Object.keys(ch).length > 2) {
+    EDITS[d.area + '\u0000' + d.id] = ch;
+    document.querySelectorAll('[data-id]').forEach(r => {
+      if (r.dataset.area === d.area && r.dataset.id === d.id) r.classList.add('edited');
+    });
+    toast('\u00c4nderung gemerkt');
+  }
+  closeEditor();
+}
 function collectChecked(){
   const out = [];
   document.querySelectorAll('#content .chk:checked').forEach(c => {
-    out.push('- [' + c.dataset.area + '] ' + c.dataset.text);
+    const d = c.closest('[data-id]').dataset;
+    out.push('- [' + d.area + '] ' + d.id);
   });
   return out;
 }
-async function copyDone(){
-  const items = collectChecked();
-  if (!items.length) { toast('nichts angehakt'); return; }
-  const text = '\u2705 Erledigt (vom Dashboard):\n' + items.join('\n');
+function buildEdits(){
+  const PRIO = { hoch:'hoch', mittel:'mittel', niedrig:'niedrig', '':'keine' };
+  return Object.values(EDITS).map(e => {
+    const parts = [];
+    if ('text' in e) parts.push('Text: "' + e.text + '"');
+    if ('prio' in e) parts.push('Prio: ' + PRIO[e.prio]);
+    if ('due' in e) parts.push('F\u00e4llig: ' + (e.due || 'keine'));
+    if ('sixt' in e) parts.push('Sixt: ' + (e.sixt === '1' ? 'an' : 'aus'));
+    return '- [' + e.area + '] "' + e.id + '" \u2192 ' + parts.join('; ');
+  });
+}
+async function copyAll(){
+  const done = collectChecked();
+  const edits = buildEdits();
+  if (!done.length && !edits.length) { toast('nichts ausstehend'); return; }
+  let text = '';
+  if (done.length) text += '\u2705 Erledigt (vom Dashboard):\n' + done.join('\n') + '\n';
+  if (edits.length) text += (text ? '\n' : '') + '\u270f\ufe0f \u00c4nderungen (vom Dashboard):\n' + edits.join('\n') + '\n';
+  text = text.replace(/\s+$/, '');
   try {
     await navigator.clipboard.writeText(text);
-    toast('kopiert (' + items.length + ')');
+    toast('kopiert');
   } catch (e) {
-    const fb = document.getElementById('fallback');
     document.getElementById('fallbackText').value = text;
-    fb.style.display = 'block';
+    document.getElementById('fallback').style.display = 'block';
   }
 }
 document.getElementById('pin').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
