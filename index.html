@@ -21,6 +21,8 @@
   .gate button { margin-top:10px; width:100%; padding:11px; border:0; border-radius:8px; background:#2dd4bf; color:#06231f; font-weight:600; cursor:pointer; }
   .gate .err { color:#f87171; font-size:13px; margin-top:10px; min-height:18px; }
   #app { display:none; }
+  html, body { overscroll-behavior-y: contain; }
+  #pull { height:0; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#2dd4bf; font-size:13px; transition:height .12s ease; }
   .toolbar { position:fixed; bottom:0; left:0; right:0; display:flex; gap:8px; padding:10px 16px; background:#0f1117; border-top:1px solid #232733; }
   .toolbar button { flex:1; padding:11px; border:0; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; }
   .btn-refresh { background:#1f2937; color:#e6e9ef; }
