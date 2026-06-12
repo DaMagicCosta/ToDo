@@ -53,6 +53,8 @@
   .newbtn { margin-left:auto; padding:6px 12px; border:1px solid #2dd4bf; border-radius:8px; background:transparent; color:#2dd4bf; font-size:13px; font-weight:600; cursor:pointer; }
   body.f-arbeit [data-notebook="Privat"] { display:none; }
   body.f-privat [data-notebook="Arbeit"] { display:none; }
+  body.f-privat .tab[data-vis="arbeit"] { display:none; }
+  body.f-arbeit .tab[data-vis="privat"] { display:none; }
   #newdlg, #notedlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:20; padding:16px; }
   .ed-box select { width:100%; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
   #nw-prio { display:flex; gap:6px; }
@@ -157,6 +159,11 @@ function applyFilter(f){
   document.body.classList.remove('f-arbeit','f-privat');
   if (f) document.body.classList.add('f-' + f);
   document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('sel', b.dataset.f === f));
+  const act = document.querySelector('.tab.active');
+  if (act && getComputedStyle(act).display === 'none') {
+    const ft = document.querySelector('.tab[data-pane="focus"]');
+    if (ft) switchTab(ft);
+  }
 }
 function setFilter(b){ const f = b.dataset.f; localStorage.setItem('todoFilter', f); applyFilter(f); }
 function switchTab(el){
