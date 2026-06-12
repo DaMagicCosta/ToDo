@@ -41,6 +41,7 @@
   <div class="err" id="err"></div>
 </div>
 <div id="app">
+  <div id="pull"></div>
   <main id="content"></main>
   <div id="fallback"><p>Manuell kopieren:</p><textarea id="fallbackText" readonly></textarea></div>
   <div class="toolbar">
@@ -104,6 +105,31 @@ async function refresh(){
     toast('Fehler beim Aktualisieren');
   }
 }
+// Pull-to-Refresh: eigene Wisch-Geste -> refresh() (KEIN Reload, bleibt angemeldet)
+let pullStartY = null, pullDist = 0;
+const PULL_THRESHOLD = 70;
+window.addEventListener('touchstart', e => {
+  pullStartY = (PIN !== null && window.scrollY <= 0) ? e.touches[0].clientY : null;
+  pullDist = 0;
+}, { passive: true });
+window.addEventListener('touchmove', e => {
+  if (pullStartY === null) return;
+  pullDist = e.touches[0].clientY - pullStartY;
+  const ind = document.getElementById('pull');
+  if (pullDist > 0 && window.scrollY <= 0) {
+    ind.style.height = Math.min(pullDist, 90) + 'px';
+    ind.textContent = pullDist > PULL_THRESHOLD ? '\u2193 Loslassen zum Aktualisieren' : '\u2193 Ziehen zum Aktualisieren';
+  } else {
+    ind.style.height = '0px';
+  }
+}, { passive: true });
+window.addEventListener('touchend', () => {
+  if (pullStartY === null) return;
+  document.getElementById('pull').style.height = '0px';
+  const trigger = pullDist > PULL_THRESHOLD;
+  pullStartY = null; pullDist = 0;
+  if (trigger) refresh();
+}, { passive: true });
 function collectChecked(){
   const out = [];
   document.querySelectorAll('#content .chk:checked').forEach(c => {
