@@ -45,6 +45,13 @@
   .ed-actions button { flex:1; padding:11px; border:0; border-radius:8px; font-weight:600; }
   .ed-cancel { background:#1f2937; color:#e6e9ef; }
   .ed-ok { background:#2dd4bf; color:#06231f; }
+  #filterbar { display:flex; align-items:center; gap:8px; padding:8px 16px 0; }
+  .seg { display:flex; background:#161922; border:1px solid #232733; border-radius:8px; overflow:hidden; }
+  .seg button { padding:6px 12px; border:0; background:transparent; color:#9aa4b2; font-size:13px; cursor:pointer; }
+  .seg button.sel { background:#2dd4bf; color:#06231f; font-weight:600; }
+  .newbtn { margin-left:auto; padding:6px 12px; border:1px solid #2dd4bf; border-radius:8px; background:transparent; color:#2dd4bf; font-size:13px; font-weight:600; cursor:pointer; }
+  body.f-arbeit [data-notebook="Privat"] { display:none; }
+  body.f-privat [data-notebook="Arbeit"] { display:none; }
 </style>
 </head>
 <body>
@@ -56,6 +63,14 @@
 </div>
 <div id="app">
   <div id="pull"></div>
+  <div id="filterbar">
+    <div class="seg" id="seg">
+      <button data-f="" onclick="setFilter(this)">Alle</button>
+      <button data-f="arbeit" onclick="setFilter(this)">Arbeit</button>
+      <button data-f="privat" onclick="setFilter(this)">Privat</button>
+    </div>
+    <button class="newbtn" onclick="openNew()">&#43; Neu</button>
+  </div>
   <main id="content"></main>
   <div id="fallback"><p>Manuell kopieren:</p><textarea id="fallbackText" readonly></textarea></div>
   <div class="toolbar">
@@ -95,6 +110,12 @@ function toast(msg){
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 1600);
 }
+function applyFilter(f){
+  document.body.classList.remove('f-arbeit','f-privat');
+  if (f) document.body.classList.add('f-' + f);
+  document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('sel', b.dataset.f === f));
+}
+function setFilter(b){ const f = b.dataset.f; localStorage.setItem('todoFilter', f); applyFilter(f); }
 function switchTab(el){
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
@@ -127,6 +148,7 @@ async function unlock(){
     document.getElementById('content').innerHTML = env.html;
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    applyFilter(localStorage.getItem('todoFilter') || '');
   } catch (e) {
     err.textContent = 'Falsche PIN oder keine Verbindung';
   }
