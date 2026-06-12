@@ -149,6 +149,7 @@ async function unlock(){
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     applyFilter(localStorage.getItem('todoFilter') || '');
+    flushQueue();
   } catch (e) {
     err.textContent = 'Falsche PIN oder keine Verbindung';
   }
@@ -248,6 +249,26 @@ async function sendInbox(submission){
   });
   if (!r.ok) throw new Error('inbox ' + r.status);
 }
+const QKEY = 'inboxQueue';
+function loadQ(){ try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch(e){ return []; } }
+function saveQ(q){ localStorage.setItem(QKEY, JSON.stringify(q)); }
+function enqueue(sub){ const q = loadQ(); q.push(sub); saveQ(q); }
+async function flushQueue(){
+  if (!INBOX || !INBOX.url) return;
+  const q = loadQ(); if (!q.length) return;
+  const rest = [];
+  for (const sub of q) { try { await sendInbox(sub); } catch(e){ rest.push(sub); } }
+  saveQ(rest);
+  if (!rest.length) toast('Warteschlange gesendet');
+}
+async function sendOrQueue(sub){
+  try {
+    if (!INBOX || !INBOX.url) throw new Error('kein Worker');
+    await sendInbox(sub);
+    return true;
+  } catch(e) { enqueue(sub); return false; }
+}
+window.addEventListener('online', flushQueue);
 function clipboardText(done, edits){
   const PRIO = { hoch:'hoch', mittel:'mittel', niedrig:'niedrig', '':'keine' };
   const dl = done.map(o => '- [' + o.area + '] ' + o.id);
@@ -286,28 +307,22 @@ async function submitChanges(){
   const hasInbox = inboxDone.length || inboxEdits.length;
   const hasWiki = wikiDone.length || wikiEdits.length;
   if (!hasInbox && !hasWiki) { toast('nichts ausstehend'); return; }
-  let inboxOk = false;
-  if (hasInbox && INBOX && INBOX.url) {
-    try {
-      await sendInbox({ id: Date.now() + '_' + crypto.randomUUID(), done:inboxDone, edits:inboxEdits });
-      inboxOk = true;
-    } catch (e) { inboxOk = false; }
-  }
-  if (inboxOk) {
+  let inboxSent = null;
+  if (hasInbox) {
+    inboxSent = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), done:inboxDone, edits:inboxEdits });
     document.querySelectorAll('#content .chk:checked').forEach(c => {
       if (c.closest('[data-id]').dataset.wiki !== '1') c.checked = false; });
     Object.keys(EDITS).forEach(k => { if (EDITS[k].wiki !== '1') delete EDITS[k]; });
     document.querySelectorAll('.edited').forEach(x => {
       if (x.dataset.wiki !== '1') x.classList.remove('edited'); });
   }
-  if (hasWiki || (hasInbox && !inboxOk)) {
-    const cbDone = inboxOk ? wikiDone : inboxDone.concat(wikiDone);
-    const cbEdits = inboxOk ? wikiEdits : inboxEdits.concat(wikiEdits);
-    await toClipboard(clipboardText(cbDone, cbEdits));
-    toast(inboxOk ? 'Wiki-Items in Zwischenablage f\u00fcr Bot'
-                  : 'an PC fehlgeschlagen \u2192 manuell an Bot');
-  } else if (inboxOk) {
+  if (hasWiki) {
+    await toClipboard(clipboardText(wikiDone, wikiEdits));
+    toast('Wiki-Items in Zwischenablage f\u00fcr Bot');
+  } else if (inboxSent === true) {
     toast('an PC gesendet');
+  } else if (inboxSent === false) {
+    toast('offline \u2013 gespeichert, wird automatisch gesendet');
   }
 }
 document.getElementById('pin').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
