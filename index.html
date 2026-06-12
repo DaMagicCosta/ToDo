@@ -231,6 +231,7 @@ async function copyAll(){
   } catch (e) {
     document.getElementById('fallbackText').value = text;
     document.getElementById('fallback').style.display = 'block';
+    toast('manuell kopieren');
   }
 }
 document.getElementById('pin').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
