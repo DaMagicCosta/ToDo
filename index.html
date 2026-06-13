@@ -18,8 +18,13 @@
   .gate { max-width:320px; margin:18vh auto 0; padding:0 24px; text-align:center; }
   .gate h1 { font-size:22px; margin:0 0 16px; }
   .gate input { width:100%; padding:12px; font-size:16px; border-radius:8px; border:1px solid #232733; background:#161922; color:#e6e9ef; }
-  .gate button { margin-top:10px; width:100%; padding:11px; border:0; border-radius:8px; background:#2dd4bf; color:#06231f; font-weight:600; cursor:pointer; }
+  .gate button[type="submit"] { margin-top:10px; width:100%; padding:11px; border:0; border-radius:8px; background:#2dd4bf; color:#06231f; font-weight:600; cursor:pointer; }
   .gate .err { color:#f87171; font-size:13px; margin-top:10px; min-height:18px; }
+  .gate form { margin:0; }
+  .pinwrap { position:relative; }
+  #pin { padding-right:44px; }
+  .reveal { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:6px 9px; background:transparent; border:0; color:#9aa4b2; font-size:18px; cursor:pointer; }
+  .gate input.userhide { position:absolute; width:1px; height:1px; padding:0; margin:-1px; border:0; opacity:0; pointer-events:none; }
   #app { display:none; }
   html, body { overscroll-behavior-y: contain; }
   #pull { height:0; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#2dd4bf; font-size:13px; transition:height .12s ease; }
@@ -80,8 +85,14 @@
 <body>
 <div class="gate" id="gate">
   <h1>&#128274; ToDo</h1>
-  <input id="pin" type="password" placeholder="PIN" autofocus>
-  <button onclick="unlock()">Entsperren</button>
+  <form id="gateform" onsubmit="unlock(); return false">
+    <input type="text" id="pinuser" name="username" autocomplete="username" value="todo" readonly class="userhide" tabindex="-1" aria-hidden="true">
+    <div class="pinwrap">
+      <input id="pin" name="password" type="password" placeholder="PIN" autocomplete="current-password" autofocus>
+      <button type="button" class="reveal" onclick="togglePin()" aria-label="Passwort anzeigen">&#128065;</button>
+    </div>
+    <button type="submit">Entsperren</button>
+  </form>
   <div class="err" id="err"></div>
 </div>
 <div id="app">
@@ -310,6 +321,13 @@ async function unlock(){
   } catch (e) {
     err.textContent = 'Falsche PIN oder keine Verbindung';
   }
+}
+function togglePin(){
+  const p = document.getElementById('pin');
+  const willShow = p.type === 'password';
+  p.type = willShow ? 'text' : 'password';
+  const b = document.querySelector('.reveal');
+  if (b) b.textContent = willShow ? String.fromCodePoint(0x1F648) : String.fromCodePoint(0x1F441);
 }
 async function refresh(){
   if (PIN === null) return;
@@ -575,7 +593,7 @@ async function submitChanges(){
     toast('offline \u2013 gespeichert, wird automatisch gesendet');
   }
 }
-document.getElementById('pin').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+// Enter wird jetzt nativ vom <form id="gateform"> (onsubmit) verarbeitet.
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
