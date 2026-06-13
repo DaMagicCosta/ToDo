@@ -425,6 +425,67 @@ function openNew(){
   document.getElementById('newdlg').style.display = 'flex';
 }
 function closeNew(){ document.getElementById('newdlg').style.display = 'none'; }
+function mdEsc(s){ return (s || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function mdInline(s){
+  return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+function mdPreview(src){
+  const lines = (src || '').split('\n');
+  let html = '', inList = false;
+  function closeList(){ if (inList){ html += '</ul>'; inList = false; } }
+  for (const raw of lines){
+    const line = mdEsc(raw);
+    let m;
+    if ((m = line.match(/^(#{1,3})\s+(.*)$/))){
+      closeList();
+      const n = m[1].length;
+      html += '<h' + n + '>' + mdInline(m[2]) + '</h' + n + '>';
+    } else if ((m = line.match(/^[-*]\s+(.*)$/))){
+      if (!inList){ html += '<ul>'; inList = true; }
+      html += '<li>' + mdInline(m[1]) + '</li>';
+    } else if (line.trim() === ''){
+      closeList();
+    } else {
+      closeList();
+      html += '<p>' + mdInline(line) + '</p>';
+    }
+  }
+  closeList();
+  return html;
+}
+function autoGrow(el){ if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+function noteSync(){
+  const t = document.getElementById('nt-note');
+  if (!t) return;
+  autoGrow(t);
+  const html = mdPreview(t.value);
+  document.getElementById('nt-preview').innerHTML = html || '<span class="mdprev-empty">(leer)</span>';
+}
+function mdField(){ return document.getElementById('nt-note'); }
+function mdWrap(before, after){
+  const t = mdField();
+  const s = t.selectionStart, e = t.selectionEnd, v = t.value;
+  const sel = v.slice(s, e);
+  t.value = v.slice(0, s) + before + sel + after + v.slice(e);
+  const pos = s + before.length + sel.length;
+  t.focus(); t.setSelectionRange(pos, pos);
+  noteSync();
+}
+function mdLinePrefix(prefix, oneLine){
+  const t = mdField();
+  const s = t.selectionStart, e = t.selectionEnd, v = t.value;
+  const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+  let lineEnd = v.indexOf('\n', oneLine ? s : e);
+  if (lineEnd === -1) lineEnd = v.length;
+  const block = v.slice(lineStart, lineEnd);
+  const prefixed = block.split('\n').map(l => prefix + l).join('\n');
+  t.value = v.slice(0, lineStart) + prefixed + v.slice(lineEnd);
+  const np = lineStart + prefixed.length;
+  t.focus(); t.setSelectionRange(np, np);
+  noteSync();
+}
 let noteRow = null;
 function openNote(el){
   const d = el.closest('[data-id]').dataset;
