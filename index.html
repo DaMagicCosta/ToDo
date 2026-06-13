@@ -209,24 +209,31 @@ function switchTab(el){
 }
 let WIKI = null;        // key -> record, nur im Speicher (KEIN localStorage = Klartext-Schutz)
 let WIKI_STACK = [];    // Navigations-/Zurück-Stack der Notiz-Keys
+let _wikiLoad = null;   // In-Flight-Guard: laufender ensureWiki-Ladevorgang
 function wesc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 async function ensureWiki(){
   if (WIKI) return true;
+  if (_wikiLoad) return _wikiLoad;
   const body = document.getElementById('wikibody');
   body.innerHTML = '<p class="wmsg">Wiki wird geladen\u2026</p>';
-  try {
-    const r = await fetch('wiki.enc.json?t=' + Date.now(), { cache:'no-store' });
-    if (!r.ok) throw new Error('fetch');
-    const arr = JSON.parse(await decryptPayload(await r.json(), PIN));
-    WIKI = {};
-    arr.forEach(n => { WIKI[n.key] = n; });
-    return true;
-  } catch(e) {
-    WIKI = null;
-    body.innerHTML = '<p class="wmsg">Wiki konnte nicht geladen werden. '
-      + '<button class="wretry" onclick="openWiki()">Erneut versuchen</button></p>';
-    return false;
-  }
+  _wikiLoad = (async () => {
+    try {
+      const r = await fetch('wiki.enc.json?t=' + Date.now(), { cache:'no-store' });
+      if (!r.ok) throw new Error('fetch');
+      const arr = JSON.parse(await decryptPayload(await r.json(), PIN));
+      WIKI = {};
+      arr.forEach(n => { WIKI[n.key] = n; });
+      return true;
+    } catch(e) {
+      WIKI = null;
+      body.innerHTML = '<p class="wmsg">Wiki konnte nicht geladen werden. '
+        + '<button class="wretry" onclick="openWiki()">Erneut versuchen</button></p>';
+      return false;
+    } finally {
+      _wikiLoad = null;
+    }
+  })();
+  return _wikiLoad;
 }
 async function openWiki(){
   const s = document.getElementById('wikisearch'); if (s) s.value = '';
@@ -238,7 +245,8 @@ function showNote(key, push){
   const n = WIKI && WIKI[key];
   const body = document.getElementById('wikibody');
   if (!n) { body.innerHTML = '<p class="wmsg">Notiz nicht gefunden.</p>'; return; }
-  if (push !== false) WIKI_STACK.push(key);
+  if (push !== false && WIKI_STACK[WIKI_STACK.length - 1] !== key) WIKI_STACK.push(key);
+  // n.html ist server-seitig gerendertes Markdown aus der eigenen, vertrauenswürdigen Wiki
   body.innerHTML = '<article class="wnote">' + n.html + '</article>';
   window.scrollTo(0, 0);
   updateCrumb(n.title);
@@ -256,7 +264,7 @@ function wikiSearch(q){
   if (!WIKI) return;
   q = (q || '').trim().toLowerCase();
   const body = document.getElementById('wikibody');
-  if (!q) { showNote(WIKI_STACK[WIKI_STACK.length - 1] || 'index', false); return; }
+  if (!q) { showNote(WIKI_STACK[WIKI_STACK.length - 1] || (WIKI['index'] ? 'index' : Object.keys(WIKI)[0]), false); return; }
   const hits = Object.values(WIKI).filter(n => n.text.indexOf(q) !== -1).slice(0, 50);
   if (!hits.length) { body.innerHTML = '<p class="wmsg">Keine Treffer.</p>'; updateCrumb('Suche'); return; }
   body.innerHTML = '<ul class="wresults">' + hits.map(n =>
@@ -312,6 +320,10 @@ async function refresh(){
     Object.keys(EDITS).forEach(k => delete EDITS[k]);
     document.getElementById('content').innerHTML = env.html;
     document.getElementById('fallback').style.display = 'none';
+    const at = document.querySelector('.tab.active');
+    if (at && at.dataset.pane === 'wiki' && WIKI && WIKI_STACK.length) {
+      showNote(WIKI_STACK[WIKI_STACK.length - 1], false);
+    }
     toast('aktualisiert');
   } catch (e) {
     toast('Fehler beim Aktualisieren');
