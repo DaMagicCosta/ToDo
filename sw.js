@@ -12,6 +12,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.pathname.endsWith('todos.enc.json')) return;  // Daten immer vom Netz
+  if (url.pathname.endsWith('wiki.enc.json')) return;   // Wiki-Bündel immer vom Netz
   // App-Hülle (Navigation/index.html): network-first -> immer aktuelle Version, Cache als Offline-Fallback
   if (e.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname.endsWith('/')) {
     e.respondWith(
