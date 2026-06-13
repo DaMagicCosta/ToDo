@@ -205,7 +205,72 @@ function switchTab(el){
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById(el.dataset.pane).classList.add('active');
+  if (el.dataset.pane === 'wiki') openWiki();
 }
+let WIKI = null;        // key -> record, nur im Speicher (KEIN localStorage = Klartext-Schutz)
+let WIKI_STACK = [];    // Navigations-/Zurück-Stack der Notiz-Keys
+function wesc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+async function ensureWiki(){
+  if (WIKI) return true;
+  const body = document.getElementById('wikibody');
+  body.innerHTML = '<p class="wmsg">Wiki wird geladen\u2026</p>';
+  try {
+    const r = await fetch('wiki.enc.json?t=' + Date.now(), { cache:'no-store' });
+    if (!r.ok) throw new Error('fetch');
+    const arr = JSON.parse(await decryptPayload(await r.json(), PIN));
+    WIKI = {};
+    arr.forEach(n => { WIKI[n.key] = n; });
+    return true;
+  } catch(e) {
+    WIKI = null;
+    body.innerHTML = '<p class="wmsg">Wiki konnte nicht geladen werden. '
+      + '<button class="wretry" onclick="openWiki()">Erneut versuchen</button></p>';
+    return false;
+  }
+}
+async function openWiki(){
+  const s = document.getElementById('wikisearch'); if (s) s.value = '';
+  if (!(await ensureWiki())) return;
+  WIKI_STACK = [];
+  showNote(WIKI['index'] ? 'index' : Object.keys(WIKI)[0]);
+}
+function showNote(key, push){
+  const n = WIKI && WIKI[key];
+  const body = document.getElementById('wikibody');
+  if (!n) { body.innerHTML = '<p class="wmsg">Notiz nicht gefunden.</p>'; return; }
+  if (push !== false) WIKI_STACK.push(key);
+  body.innerHTML = '<article class="wnote">' + n.html + '</article>';
+  window.scrollTo(0, 0);
+  updateCrumb(n.title);
+}
+function updateCrumb(title){
+  const c = document.getElementById('wikicrumb');
+  const back = WIKI_STACK.length > 1
+    ? '<button class="wback" onclick="wikiBack()">\u2039 Zur\u00fcck</button> ' : '';
+  c.innerHTML = back + '<span class="wtitle">' + wesc(title || '') + '</span>';
+}
+function wikiBack(){
+  if (WIKI_STACK.length > 1) { WIKI_STACK.pop(); showNote(WIKI_STACK[WIKI_STACK.length - 1], false); }
+}
+function wikiSearch(q){
+  if (!WIKI) return;
+  q = (q || '').trim().toLowerCase();
+  const body = document.getElementById('wikibody');
+  if (!q) { showNote(WIKI_STACK[WIKI_STACK.length - 1] || 'index', false); return; }
+  const hits = Object.values(WIKI).filter(n => n.text.indexOf(q) !== -1).slice(0, 50);
+  if (!hits.length) { body.innerHTML = '<p class="wmsg">Keine Treffer.</p>'; updateCrumb('Suche'); return; }
+  body.innerHTML = '<ul class="wresults">' + hits.map(n =>
+    '<li data-wikikey="' + wesc(n.key) + '"><span class="wr-title">' + wesc(n.title) + '</span></li>'
+  ).join('') + '</ul>';
+  updateCrumb('Suche: ' + hits.length + ' Treffer');
+}
+// Persistenter, delegierter Klick-Handler (überlebt refresh(), das #content ersetzt):
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[data-wikilink]');
+  if (a) { e.preventDefault(); showNote(a.dataset.wikilink); return; }
+  const li = e.target.closest('li[data-wikikey]');
+  if (li) { showNote(li.dataset.wikikey); }
+});
 async function fetchPayload(){
   const r = await fetch('todos.enc.json?t=' + Date.now(), { cache:'no-store' });
   if (!r.ok) throw new Error('fetch');
