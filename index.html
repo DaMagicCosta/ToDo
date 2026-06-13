@@ -74,7 +74,7 @@
     .focuscard, .item, .item.sub, .grp { background:#fff !important; color:#000 !important; border-color:#bbb !important; }
     .grp { border:none !important; }
     .focuscard { border:1px solid #bbb !important; border-left:3px solid #888 !important; }
-    summary.grp-title, summary.grp-title span, .txt, .area, .due, .prog, .note { color:#000 !important; }
+    summary.grp-title, summary.grp-title span, .txt, .area, .due, .prog, .note, .note * { color:#000 !important; }
     .note { border-left:2px solid #999 !important; }
     .pri { background:#fff !important; color:#000 !important; border:1px solid #555; }
     .focuscard, .parent, .grp { break-inside: avoid; }
@@ -168,7 +168,7 @@
 <div id="notedlg">
   <div class="ed-box">
     <h3>Notiz</h3>
-    <textarea id="nt-note" rows="4"></textarea>
+    <textarea id="nt-note" rows="4" placeholder="Notiz (Markdown m&#246;glich: - Liste, **fett**, # Titel)"></textarea>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeNote()">Abbrechen</button><button class="ed-ok" onclick="saveNote()">Speichern</button></div>
   </div>
 </div>
