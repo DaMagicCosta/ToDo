@@ -177,15 +177,7 @@
 <div id="notedlg">
   <div class="ed-box ed-box-note">
     <h3>Notiz</h3>
-    <div class="mdbar">
-      <button type="button" onclick="mdLinePrefix('- ')">&#8226; Liste</button>
-      <button type="button" onclick="mdWrap('**','**')">Fett</button>
-      <button type="button" onclick="mdWrap('*','*')">Kursiv</button>
-      <button type="button" onclick="mdLinePrefix('# ', true)"># Titel</button>
-    </div>
-    <textarea id="nt-note" oninput="noteSync()" placeholder="Notiz (Markdown m&#246;glich: - Liste, **fett**, # Titel)"></textarea>
-    <div class="mdprev-lab">Vorschau</div>
-    <div id="nt-preview" class="note"></div>
+    <div class="mdbar"><button type="button" onclick="mdLinePrefix('nt-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('nt-note','**','**')">Fett</button><button type="button" onclick="mdWrap('nt-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('nt-note','# ', true)"># Titel</button></div><textarea id="nt-note" class="mdfield" oninput="noteSync('nt-note')" placeholder="Notiz (Markdown m&#246;glich: - Liste, **fett**, # Titel)"></textarea><div class="mdprev-lab">Vorschau</div><div id="nt-preview" class="note mdprev"></div>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeNote()">Abbrechen</button><button class="ed-ok" onclick="saveNote()">Speichern</button></div>
   </div>
 </div>
@@ -475,25 +467,24 @@ function mdPreview(src){
   return html;
 }
 function autoGrow(el){ if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-function noteSync(){
-  const t = document.getElementById('nt-note');
+function noteSync(id){
+  const t = document.getElementById(id);
   if (!t) return;
   autoGrow(t);
-  const html = mdPreview(t.value);
-  document.getElementById('nt-preview').innerHTML = html || '<span class="mdprev-empty">(leer)</span>';
+  const prev = document.getElementById(id.replace('-note','-preview'));
+  if (prev) prev.innerHTML = mdPreview(t.value) || '<span class="mdprev-empty">(leer)</span>';
 }
-function mdField(){ return document.getElementById('nt-note'); }
-function mdWrap(before, after){
-  const t = mdField();
+function mdWrap(id, before, after){
+  const t = document.getElementById(id);
   const s = t.selectionStart, e = t.selectionEnd, v = t.value;
   const sel = v.slice(s, e);
   t.value = v.slice(0, s) + before + sel + after + v.slice(e);
   const pos = s + before.length + sel.length;
   t.focus(); t.setSelectionRange(pos, pos);
-  noteSync();
+  noteSync(id);
 }
-function mdLinePrefix(prefix, oneLine){
-  const t = mdField();
+function mdLinePrefix(id, prefix, oneLine){
+  const t = document.getElementById(id);
   const s = t.selectionStart, e = t.selectionEnd, v = t.value;
   const lineStart = v.lastIndexOf('\n', s - 1) + 1;
   let lineEnd = v.indexOf('\n', oneLine ? s : e);
@@ -503,7 +494,7 @@ function mdLinePrefix(prefix, oneLine){
   t.value = v.slice(0, lineStart) + prefixed + v.slice(lineEnd);
   const np = lineStart + prefixed.length;
   t.focus(); t.setSelectionRange(np, np);
-  noteSync();
+  noteSync(id);
 }
 let noteRow = null;
 function openNote(el){
@@ -511,7 +502,7 @@ function openNote(el){
   noteRow = { notebook:d.notebook, area:d.area, id:d.id, wiki:d.wiki };
   document.getElementById('nt-note').value = JSON.parse(d.note || '""');
   document.getElementById('notedlg').style.display = 'flex';
-  noteSync();
+  noteSync('nt-note');
 }
 function closeNote(){ document.getElementById('notedlg').style.display = 'none'; noteRow = null; }
 async function saveNote(){
