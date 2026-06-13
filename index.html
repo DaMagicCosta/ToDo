@@ -189,11 +189,6 @@ function applyFilter(f){
   document.body.classList.remove('f-arbeit','f-privat');
   if (f) document.body.classList.add('f-' + f);
   document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('sel', b.dataset.f === f));
-  const act = document.querySelector('.tab.active');
-  if (act && getComputedStyle(act).display === 'none') {
-    const ft = document.querySelector('.tab[data-pane="focus"]');
-    if (ft) switchTab(ft);
-  }
 }
 function setFilter(b){ const f = b.dataset.f; localStorage.setItem('todoFilter', f); applyFilter(f); }
 function printNow(){
@@ -375,7 +370,7 @@ window.addEventListener('touchend', () => {
   pullStartY = null; pullDist = 0;
   if (trigger) refresh();
 }, { passive: true });
-const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?}
+const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?,familie?,frau?}
 let editRow = null;
 function openEdit(el){
   const d = el.closest('[data-id]').dataset;
@@ -558,6 +553,8 @@ function clipboardText(done, edits){
     if ('prio' in e) parts.push('Prio: ' + PRIO[e.prio]);
     if ('due' in e) parts.push('F\u00e4llig: ' + (e.due || 'keine'));
     if ('sixt' in e) parts.push('Sixt: ' + (e.sixt === '1' ? 'an' : 'aus'));
+    if ('familie' in e) parts.push('Familie: ' + (e.familie === '1' ? 'an' : 'aus'));
+    if ('frau' in e) parts.push('Frau: ' + (e.frau === '1' ? 'an' : 'aus'));
     if ('note' in e) parts.push('Notiz: "' + (e.note || '(leer)') + '"');
     return '- [' + e.area + '] "' + e.id + '" \u2192 ' + parts.join('; ');
   });
