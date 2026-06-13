@@ -23,7 +23,7 @@
   .gate form { margin:0; }
   .pinwrap { position:relative; }
   #pin { padding-right:44px; }
-  .reveal { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:6px 9px; background:transparent; border:0; color:#9aa4b2; font-size:18px; cursor:pointer; }
+  .reveal { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:9px 12px; line-height:1; background:transparent; border:0; color:#9aa4b2; font-size:18px; cursor:pointer; }
   .gate input.userhide { position:absolute; width:1px; height:1px; padding:0; margin:-1px; border:0; opacity:0; pointer-events:none; }
   #app { display:none; }
   html, body { overscroll-behavior-y: contain; }
@@ -68,7 +68,7 @@
   #printhead { display:none; }
   @media print {
     body { background:#fff; color:#000; }
-    #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec { display:none !important; }
+    .gate, #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec { display:none !important; }
     #printhead { display:flex; justify-content:space-between; font-weight:600; border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:12px; }
     .pane { padding:0; max-width:none; }
     .pane h4 { color:#000; }
@@ -328,6 +328,7 @@ function togglePin(){
   p.type = willShow ? 'text' : 'password';
   const b = document.querySelector('.reveal');
   if (b) b.textContent = willShow ? String.fromCodePoint(0x1F648) : String.fromCodePoint(0x1F441);
+  if (b) b.setAttribute('aria-label', willShow ? 'Passwort verbergen' : 'Passwort anzeigen');
 }
 async function refresh(){
   if (PIN === null) return;
