@@ -58,8 +58,6 @@
   .newbtn { margin-left:auto; padding:6px 12px; border:1px solid #2dd4bf; border-radius:8px; background:transparent; color:#2dd4bf; font-size:13px; font-weight:600; cursor:pointer; }
   body.f-arbeit [data-notebook="Privat"] { display:none; }
   body.f-privat [data-notebook="Arbeit"] { display:none; }
-  body.f-privat .tab[data-vis="arbeit"] { display:none; }
-  body.f-arbeit .tab[data-vis="privat"] { display:none; }
   #newdlg, #notedlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:20; padding:16px; }
   .ed-box select { width:100%; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
   #nw-prio { display:flex; gap:6px; }
@@ -128,7 +126,9 @@
     </div>
     <label class="ed-lab">Fälligkeit</label>
     <div class="ed-row"><input id="ed-due" type="date"><button onclick="clearDue()">keine</button></div>
-    <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef (Sixt)</label>
+    <label class="ed-lab"><input id="ed-familie" type="checkbox" style="width:auto"> Familie</label>
+    <label class="ed-lab"><input id="ed-frau" type="checkbox" style="width:auto"> Frau</label>
+    <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
     <textarea id="ed-note" rows="3"></textarea>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeEditor()">Abbrechen</button><button class="ed-ok" onclick="applyEdit()">Übernehmen</button></div>
@@ -156,7 +156,9 @@
     </div>
     <label class="ed-lab">F&#228;lligkeit</label>
     <div class="ed-row"><input id="nw-due" type="date"><button onclick="document.getElementById('nw-due').value=''">keine</button></div>
-    <label class="ed-lab"><input id="nw-sixt" type="checkbox" style="width:auto"> Chef (Sixt)</label>
+    <label class="ed-lab"><input id="nw-familie" type="checkbox" style="width:auto"> Familie</label>
+    <label class="ed-lab"><input id="nw-frau" type="checkbox" style="width:auto"> Frau</label>
+    <label class="ed-lab"><input id="nw-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
     <textarea id="nw-note" rows="2"></textarea>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeNew()">Abbrechen</button><button class="ed-ok" onclick="saveNew()">Anlegen</button></div>
@@ -377,12 +379,14 @@ const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,six
 let editRow = null;
 function openEdit(el){
   const d = el.closest('[data-id]').dataset;
-  editRow = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, note:JSON.parse(d.note || '""') };
+  editRow = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
   document.getElementById('ed-text').value = d.text;
   document.getElementById('ed-note').value = editRow.note;
   document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
   document.getElementById('ed-due').value = d.due || '';
   document.getElementById('ed-sixt').checked = d.sixt === '1';
+  document.getElementById('ed-familie').checked = d.familie === '1';
+  document.getElementById('ed-frau').checked = d.frau === '1';
   document.getElementById('editor').style.display = 'flex';
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
@@ -416,6 +420,8 @@ function openNew(){
   document.getElementById('nw-text').value = '';
   document.getElementById('nw-due').value = '';
   document.getElementById('nw-sixt').checked = false;
+  document.getElementById('nw-familie').checked = false;
+  document.getElementById('nw-frau').checked = false;
   document.getElementById('nw-note').value = '';
   document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.toggle('sel', x.dataset.v === ''));
   fillAreas();
@@ -458,6 +464,8 @@ async function saveNew(){
   const due = document.getElementById('nw-due').value;
   if (due) add.due = due;
   if (document.getElementById('nw-sixt').checked) add.sixt = '1';
+  if (document.getElementById('nw-familie').checked) add.familie = '1';
+  if (document.getElementById('nw-frau').checked) add.frau = '1';
   const nnote = document.getElementById('nw-note').value.trim();
   if (nnote) add.note = nnote;
   const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), adds:[add], sections });
@@ -480,12 +488,16 @@ function applyEdit(){
   const newPrio = sel ? sel.dataset.v : d.prio;
   const newDue = document.getElementById('ed-due').value;
   const newSixt = document.getElementById('ed-sixt').checked ? '1' : '0';
+  const newFamilie = document.getElementById('ed-familie').checked ? '1' : '0';
+  const newFrau = document.getElementById('ed-frau').checked ? '1' : '0';
   const newNote = document.getElementById('ed-note').value;
   const ch = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki };
   if (newText && newText !== d.text) ch.text = newText;
   if (newPrio !== d.prio) ch.prio = newPrio;
   if (newDue !== d.due) ch.due = newDue;
   if (newSixt !== d.sixt) ch.sixt = newSixt;
+  if (newFamilie !== d.familie) ch.familie = newFamilie;
+  if (newFrau !== d.frau) ch.frau = newFrau;
   if (newNote !== d.note) ch.note = newNote;
   if (Object.keys(ch).length > 4) {
     EDITS[d.area + '\u0000' + d.id] = ch;
