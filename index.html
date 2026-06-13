@@ -550,7 +550,12 @@ async function submitChanges(){
   Object.values(EDITS).forEach(e => { const { wiki, ...op } = e; edits.push(op); });
   if (!done.length && !edits.length) { toast('nichts ausstehend'); return; }
   const sent = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), done, edits });
-  document.querySelectorAll('#content .chk:checked').forEach(c => { c.checked = false; });
+  // optimistisch: abgehakte Items sofort lokal ausblenden (Fokus + Struktur, via area+id)
+  done.forEach(o => {
+    document.querySelectorAll('#content [data-id]').forEach(el => {
+      if (el.dataset.area === o.area && el.dataset.id === o.id) el.remove();
+    });
+  });
   Object.keys(EDITS).forEach(k => delete EDITS[k]);
   document.querySelectorAll('.edited').forEach(x => x.classList.remove('edited'));
   toast(sent === true ? 'an PC gesendet' : 'offline \u2013 gespeichert, wird automatisch gesendet');
