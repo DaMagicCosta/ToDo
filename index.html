@@ -437,11 +437,6 @@ async function saveNote(){
   const d = noteRow;
   const op = { notebook:d.notebook, area:d.area, id:d.id, note:document.getElementById('nt-note').value };
   closeNote();
-  if (d.wiki === '1') {
-    await toClipboard(clipboardText([], [op]));
-    toast('Wiki \u2013 in Zwischenablage f\u00fcr Bot');
-    return;
-  }
   const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), edits:[op] });
   toast(ok ? 'Notiz gesendet' : 'offline \u2013 gespeichert');
 }
@@ -546,64 +541,19 @@ async function sendOrQueue(sub){
   } catch(e) { enqueue(sub); return false; }
 }
 window.addEventListener('online', flushQueue);
-function clipboardText(done, edits){
-  const PRIO = { hoch:'hoch', mittel:'mittel', niedrig:'niedrig', '':'keine' };
-  const dl = done.map(o => '- [' + o.area + '] ' + o.id);
-  const el = edits.map(e => {
-    const parts = [];
-    if ('text' in e) parts.push('Text: "' + e.text + '"');
-    if ('prio' in e) parts.push('Prio: ' + PRIO[e.prio]);
-    if ('due' in e) parts.push('F\u00e4llig: ' + (e.due || 'keine'));
-    if ('sixt' in e) parts.push('Sixt: ' + (e.sixt === '1' ? 'an' : 'aus'));
-    if ('familie' in e) parts.push('Familie: ' + (e.familie === '1' ? 'an' : 'aus'));
-    if ('frau' in e) parts.push('Frau: ' + (e.frau === '1' ? 'an' : 'aus'));
-    if ('note' in e) parts.push('Notiz: "' + (e.note || '(leer)') + '"');
-    return '- [' + e.area + '] "' + e.id + '" \u2192 ' + parts.join('; ');
-  });
-  let text = '';
-  if (dl.length) text += '\u2705 Erledigt (vom Dashboard):\n' + dl.join('\n') + '\n';
-  if (el.length) text += (text ? '\n' : '') + '\u270f\ufe0f \u00c4nderungen (vom Dashboard):\n' + el.join('\n') + '\n';
-  return text.replace(/\s+$/, '');
-}
-async function toClipboard(text){
-  try { await navigator.clipboard.writeText(text); toast('kopiert'); }
-  catch (e) {
-    document.getElementById('fallbackText').value = text;
-    document.getElementById('fallback').style.display = 'block';
-    toast('manuell kopieren');
-  }
-}
 async function submitChanges(){
-  const inboxDone=[], wikiDone=[], inboxEdits=[], wikiEdits=[];
+  const done=[], edits=[];
   document.querySelectorAll('#content .chk:checked').forEach(c => {
     const d = c.closest('[data-id]').dataset;
-    const op = { notebook:d.notebook, area:d.area, id:d.id };
-    (d.wiki === '1' ? wikiDone : inboxDone).push(op);
+    done.push({ notebook:d.notebook, area:d.area, id:d.id });
   });
-  Object.values(EDITS).forEach(e => {
-    const { wiki, ...op } = e;
-    (wiki === '1' ? wikiEdits : inboxEdits).push(op);
-  });
-  const hasInbox = inboxDone.length || inboxEdits.length;
-  const hasWiki = wikiDone.length || wikiEdits.length;
-  if (!hasInbox && !hasWiki) { toast('nichts ausstehend'); return; }
-  let inboxSent = null;
-  if (hasInbox) {
-    inboxSent = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), done:inboxDone, edits:inboxEdits });
-    document.querySelectorAll('#content .chk:checked').forEach(c => {
-      if (c.closest('[data-id]').dataset.wiki !== '1') c.checked = false; });
-    Object.keys(EDITS).forEach(k => { if (EDITS[k].wiki !== '1') delete EDITS[k]; });
-    document.querySelectorAll('.edited').forEach(x => {
-      if (x.dataset.wiki !== '1') x.classList.remove('edited'); });
-  }
-  if (hasWiki) {
-    await toClipboard(clipboardText(wikiDone, wikiEdits));
-    toast('Wiki-Items in Zwischenablage f\u00fcr Bot');
-  } else if (inboxSent === true) {
-    toast('an PC gesendet');
-  } else if (inboxSent === false) {
-    toast('offline \u2013 gespeichert, wird automatisch gesendet');
-  }
+  Object.values(EDITS).forEach(e => { const { wiki, ...op } = e; edits.push(op); });
+  if (!done.length && !edits.length) { toast('nichts ausstehend'); return; }
+  const sent = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), done, edits });
+  document.querySelectorAll('#content .chk:checked').forEach(c => { c.checked = false; });
+  Object.keys(EDITS).forEach(k => delete EDITS[k]);
+  document.querySelectorAll('.edited').forEach(x => x.classList.remove('edited'));
+  toast(sent === true ? 'an PC gesendet' : 'offline \u2013 gespeichert, wird automatisch gesendet');
 }
 // Enter wird jetzt nativ vom <form id="gateform"> (onsubmit) verarbeitet.
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
