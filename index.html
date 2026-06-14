@@ -238,11 +238,21 @@ async function ensureWiki(){
   body.innerHTML = '<p class="wmsg">Wiki wird geladen\u2026</p>';
   _wikiLoad = (async () => {
     try {
-      const r = await fetch('wiki.enc.json?t=' + Date.now(), { cache:'no-store' });
-      if (!r.ok) throw new Error('fetch');
-      const arr = JSON.parse(await decryptPayload(await r.json(), PIN));
+      let raw, offline = false;
+      try {
+        const r = await fetch('wiki.enc.json?t=' + Date.now(), { cache:'no-store' });
+        if (!r.ok) throw new Error('fetch');
+        raw = await r.json();
+        cacheBlob('encWiki', raw);
+      } catch(netErr) {
+        raw = loadBlob('encWiki');
+        if (!raw) throw netErr;
+        offline = true;
+      }
+      const arr = JSON.parse(await decryptPayload(raw, PIN));
       WIKI = {};
       arr.forEach(n => { WIKI[n.key] = n; });
+      if (offline) toast('offline \u2013 letzter Stand');
       return true;
     } catch(e) {
       WIKI = null;
