@@ -211,6 +211,26 @@ function toast(msg){
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 1600);
 }
+function listSearch(q){
+  q = (q || '').trim().toLowerCase();
+  const content = document.getElementById('content');
+  if (!content) return;
+  const match = el => !q || (el.dataset.text || '').toLowerCase().includes(q);
+  // Struktur: einzelne Karten aus-/einblenden
+  content.querySelectorAll('details.grp [data-text]').forEach(r => r.classList.toggle('nomatch', !match(r)));
+  // Fokus: Eltern-Einheit als Ganzes (sichtbar, wenn irgendein ToDo darin passt)
+  content.querySelectorAll('.focusparent').forEach(p => {
+    const hit = !q || [...p.querySelectorAll('[data-text]')].some(match);
+    p.classList.toggle('nomatch', !hit);
+  });
+  // Leere Struktur-Gruppen ausblenden
+  content.querySelectorAll('details.grp').forEach(g => {
+    const hit = !q || g.querySelector('[data-text]:not(.nomatch)');
+    g.classList.toggle('nomatch', !hit);
+  });
+  highlightMatches(content, q);
+}
+function highlightMatches(content, q){ /* Task 3 */ }
 function applyFilter(f){
   document.body.classList.remove('f-arbeit','f-privat');
   if (f) document.body.classList.add('f-' + f);
@@ -399,6 +419,7 @@ async function refresh(){
     INBOX = env.inbox || INBOX;
     Object.keys(EDITS).forEach(k => delete EDITS[k]);
     document.getElementById('content').innerHTML = env.html;
+    const qel = document.getElementById('q'); if (qel) qel.value = '';
     document.getElementById('fallback').style.display = 'none';
     const at = document.querySelector('.tab.active');
     if (at && at.dataset.pane === 'wiki' && WIKI && WIKI_STACK.length) {
