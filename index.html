@@ -80,9 +80,9 @@
   #nw-prio .pbtn.sel { background:#2dd4bf; color:#06231f; border-color:#2dd4bf; font-weight:600; }
   #printhead { display:none; }
   @media (min-width:900px){
-    #app { margin-right:42%; }
-    .toolbar { right:42%; }
-    #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
+    body.unlocked #app { margin-right:42%; }
+    body.unlocked .toolbar { right:42%; }
+    body.unlocked #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
     #editor .ed-box { max-width:none; border:0; background:transparent; padding:0; }
     #editor .ed-actions { display:none; }
     #content [data-id].selected { outline:2px solid #2dd4bf; outline-offset:-2px; border-radius:8px; }
@@ -432,6 +432,7 @@ async function unlock(){
     preselectFirst();
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    document.body.classList.add('unlocked');
     applyFilter(localStorage.getItem('todoFilter') || '');
     if (offline) toast('offline \u2013 letzter Stand');
     flushQueue();
