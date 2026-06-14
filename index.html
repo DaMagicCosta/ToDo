@@ -215,7 +215,7 @@ function printSection(el, ev){
   ev.stopPropagation(); ev.preventDefault();
   const grp = el.closest('details.grp');
   if (!grp) return;
-  const area = grp.dataset.area || '';
+  const area = grp.dataset.label || grp.dataset.area || '';
   [grp, ...grp.querySelectorAll('details')].forEach(d => { if (!d.open) d.dataset.reclose = '1'; d.open = true; });
   grp.classList.add('printtarget');
   document.body.classList.add('print-section');
