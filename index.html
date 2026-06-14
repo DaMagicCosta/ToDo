@@ -76,14 +76,17 @@
   #nw-prio .pbtn.sel { background:#2dd4bf; color:#06231f; border-color:#2dd4bf; font-weight:600; }
   #printhead { display:none; }
   @media print {
-    body { background:#fff; color:#000; }
+    body { background:#fff; color:#000; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .gate, #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec { display:none !important; }
     #printhead { display:flex; justify-content:space-between; font-weight:600; border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:12px; }
     .pane { padding:0; max-width:none; }
     .pane h4 { color:#000; }
     .focuscard, .item, .item.sub, .grp { background:#fff !important; color:#000 !important; border-color:#bbb !important; }
     .grp { border:none !important; }
-    .focuscard { border:1px solid #bbb !important; border-left:3px solid #888 !important; }
+    .focuscard { border:1px solid #ccc !important; }
+    .focuscard.hi { border-left:3px solid #f87171 !important; }
+    .focuscard.sixt { border-left:3px solid #fbbf24 !important; }
+    .focuscard.overdue { border-left:4px solid #f87171 !important; }
     summary.grp-title, summary.grp-title span, .txt, .area, .due, .prog, .note, .note * { color:#000 !important; }
     .note { border-left:2px solid #999 !important; }
     .pri { background:#fff !important; color:#000 !important; border:1px solid #555; }
