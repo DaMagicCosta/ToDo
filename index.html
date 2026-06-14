@@ -135,7 +135,7 @@
   <div class="ed-box ed-box-note">
     <h3>ToDo bearbeiten</h3>
     <label class="ed-lab">Text</label>
-    <input id="ed-text" type="text" list="dl-texts">
+    <input id="ed-text" type="text" list="dl-texts" autocomplete="off">
     <label class="ed-lab">Priorität</label>
     <div id="ed-prio">
       <button class="pbtn" data-v="hoch" onclick="pickPrio(this)">Hoch</button>
@@ -157,7 +157,7 @@
   <div class="ed-box ed-box-note">
     <h3>Neues ToDo</h3>
     <label class="ed-lab">Text</label>
-    <input id="nw-text" type="text" list="dl-texts">
+    <input id="nw-text" type="text" list="dl-texts" autocomplete="off">
     <label class="ed-lab">Notizbuch</label>
     <div id="nw-nb" class="seg">
       <button data-v="Arbeit" onclick="pickNb(this)">Arbeit</button>
@@ -165,7 +165,7 @@
     </div>
     <label class="ed-lab">Bereich</label>
     <select id="nw-area" onchange="onAreaChange()"></select>
-    <input id="nw-newsec" type="text" list="dl-areas" placeholder="Neuer Abschnitt" style="display:none;margin-top:6px">
+    <input id="nw-newsec" type="text" list="dl-areas" autocomplete="off" placeholder="Neuer Abschnitt" style="display:none;margin-top:6px">
     <label class="ed-lab">Priorit&#228;t</label>
     <div id="nw-prio">
       <button class="pbtn" data-v="hoch" onclick="pickNewPrio(this)">Hoch</button>
