@@ -788,7 +788,10 @@ function reflectEdit(d, ch){
         else if (txt) txt.insertAdjacentHTML('afterend', html);
       }
     }
-    if ('note' in ch) r.dataset.note = JSON.stringify(ch.note);
+    if ('note' in ch){
+      const _prevEntries = splitNoteLog(JSON.parse(r.dataset.note || '""')).entries;
+      r.dataset.note = JSON.stringify(joinNoteLog(ch.note, _prevEntries));
+    }
     r.classList.add('edited');
   });
 }
@@ -845,6 +848,10 @@ function splitNoteLog(note){
   });
   return { free: free.join('\n'), entries };
 }
+function joinNoteLog(free, entries){
+  const logLines = entries.map(e => '[' + e.ts + '] ' + e.text);
+  return [free, ...logLines].filter(s => s !== '').join('\n');
+}
 function fmtTsDe(ts){
   const [date, time] = ts.split(' ');
   const [y, m, dd] = date.split('-');
@@ -864,6 +871,14 @@ async function addLog(){
   const ts = localTs();
   const op = { notebook: editRow.notebook, area: editRow.area, id: editRow.id, ts, text };
   document.getElementById('ed-log').appendChild(logItemEl(ts, text));   // optimistisch unten
+  // data-note der Karte(n) optimistisch nachziehen, damit Re-open vor Server-Refresh den Eintrag zeigt
+  document.querySelectorAll('#content [data-id]').forEach(el => {
+    if (el.dataset.area === editRow.area && el.dataset.id === editRow.id) {
+      const _s = splitNoteLog(JSON.parse(el.dataset.note || '""'));
+      _s.entries.push({ ts, text });
+      el.dataset.note = JSON.stringify(joinNoteLog(_s.free, _s.entries));
+    }
+  });
   inp.value = ''; inp.focus();
   await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), logs:[op] });
 }
