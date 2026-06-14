@@ -299,6 +299,8 @@ document.addEventListener('click', e => {
   const li = e.target.closest('li[data-wikikey]');
   if (li) { showNote(li.dataset.wikikey); }
 });
+function cacheBlob(key, obj){ try { localStorage.setItem(key, JSON.stringify(obj)); } catch(_){} }
+function loadBlob(key){ try { return JSON.parse(localStorage.getItem(key)); } catch(_){ return null; } }
 async function fetchPayload(){
   const r = await fetch('todos.enc.json?t=' + Date.now(), { cache:'no-store' });
   if (!r.ok) throw new Error('fetch');
@@ -317,8 +319,17 @@ async function decryptPayload(p, pin){
 async function unlock(){
   const pin = document.getElementById('pin').value;
   const err = document.getElementById('err'); err.textContent = '';
+  let offline = false;
   try {
-    const payload = await fetchPayload();
+    let payload;
+    try {
+      payload = await fetchPayload();
+      cacheBlob('encTodos', payload);
+    } catch(netErr) {
+      payload = loadBlob('encTodos');
+      if (!payload) throw netErr;
+      offline = true;
+    }
     const env = parseEnvelope(await decryptPayload(payload, pin));
     PIN = pin;
     INBOX = env.inbox || null;
@@ -326,6 +337,7 @@ async function unlock(){
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     applyFilter(localStorage.getItem('todoFilter') || '');
+    if (offline) toast('offline \u2013 letzter Stand');
     flushQueue();
   } catch (e) {
     err.textContent = 'Falsche PIN oder keine Verbindung';
@@ -343,6 +355,7 @@ async function refresh(){
   if (PIN === null) return;
   try {
     const payload = await fetchPayload();
+    cacheBlob('encTodos', payload);
     const env = parseEnvelope(await decryptPayload(payload, PIN));
     INBOX = env.inbox || INBOX;
     Object.keys(EDITS).forEach(k => delete EDITS[k]);
