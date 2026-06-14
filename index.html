@@ -135,7 +135,7 @@
   <div class="ed-box ed-box-note">
     <h3>ToDo bearbeiten</h3>
     <label class="ed-lab">Text</label>
-    <input id="ed-text" type="text">
+    <input id="ed-text" type="text" list="dl-texts">
     <label class="ed-lab">Priorität</label>
     <div id="ed-prio">
       <button class="pbtn" data-v="hoch" onclick="pickPrio(this)">Hoch</button>
@@ -157,7 +157,7 @@
   <div class="ed-box ed-box-note">
     <h3>Neues ToDo</h3>
     <label class="ed-lab">Text</label>
-    <input id="nw-text" type="text">
+    <input id="nw-text" type="text" list="dl-texts">
     <label class="ed-lab">Notizbuch</label>
     <div id="nw-nb" class="seg">
       <button data-v="Arbeit" onclick="pickNb(this)">Arbeit</button>
@@ -165,7 +165,7 @@
     </div>
     <label class="ed-lab">Bereich</label>
     <select id="nw-area" onchange="onAreaChange()"></select>
-    <input id="nw-newsec" type="text" placeholder="Neuer Abschnitt" style="display:none;margin-top:6px">
+    <input id="nw-newsec" type="text" list="dl-areas" placeholder="Neuer Abschnitt" style="display:none;margin-top:6px">
     <label class="ed-lab">Priorit&#228;t</label>
     <div id="nw-prio">
       <button class="pbtn" data-v="hoch" onclick="pickNewPrio(this)">Hoch</button>
@@ -191,6 +191,8 @@
   </div>
 </div>
 <div id="toast"></div>
+<datalist id="dl-texts"></datalist>
+<datalist id="dl-areas"></datalist>
 <script>
 let PIN = null;
 let INBOX = null;
@@ -441,6 +443,7 @@ function openEdit(el){
   document.getElementById('ed-familie').checked = d.familie === '1';
   document.getElementById('ed-frau').checked = d.frau === '1';
   document.getElementById('editor').style.display = 'flex';
+  fillDatalist('dl-texts', allTexts());
   noteSync('ed-note');
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
@@ -455,6 +458,12 @@ function knownAreas(notebook){
     try { (JSON.parse(fel.dataset.folders || '{}')[notebook] || []).forEach(a => set.add(a)); } catch(_){}
   }
   return [...set].sort();
+}
+function allTexts(){ return [...document.querySelectorAll('#content [data-text]')].map(el => el.dataset.text); }
+function fillDatalist(id, values){
+  const dl = document.getElementById(id);
+  if (!dl) return;
+  dl.innerHTML = [...new Set(values)].filter(Boolean).sort().map(v => '<option value="' + wesc(v) + '">').join('');
 }
 function fillAreas(){
   const sel = document.getElementById('nw-area');
@@ -483,6 +492,8 @@ function openNew(){
   document.getElementById('nw-note').value = '';
   document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.toggle('sel', x.dataset.v === ''));
   fillAreas();
+  fillDatalist('dl-texts', allTexts());
+  fillDatalist('dl-areas', knownAreas('Arbeit').concat(knownAreas('Privat')));
   document.getElementById('newdlg').style.display = 'flex';
   noteSync('nw-note');
 }
