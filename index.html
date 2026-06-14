@@ -492,6 +492,7 @@ window.addEventListener('touchend', () => {
 const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?,familie?,frau?}
 let editRow = null;
 function openEdit(el){
+  if (isWide()) stageEdit();   // Auto-merken: vorigen Eintrag sichern, bevor gewechselt wird
   const d = el.closest('[data-id]').dataset;
   editRow = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
   document.getElementById('ed-text').value = d.text;
@@ -501,9 +502,10 @@ function openEdit(el){
   document.getElementById('ed-sixt').checked = d.sixt === '1';
   document.getElementById('ed-familie').checked = d.familie === '1';
   document.getElementById('ed-frau').checked = d.frau === '1';
-  document.getElementById('editor').style.display = 'flex';
   fillDatalist('dl-texts', allTexts());
   noteSync('ed-note');
+  if (isWide()) markSelected(el);
+  else document.getElementById('editor').style.display = 'flex';
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
