@@ -800,6 +800,7 @@ function stageEdit(){
 function applyEdit(){ stageEdit(); closeEditor(); }
 function preselectFirst(){
   if (!isWide()) return;
+  document.body.classList.remove('newmode');   // Detailansicht zeigen, nie im Neu-Modus haengen bleiben
   const first = document.querySelector('#content .pane.active [data-id] .txt');
   if (first) openEdit(first);
 }
