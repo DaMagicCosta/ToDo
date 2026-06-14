@@ -478,9 +478,22 @@ function fillDatalist(id, values){
 }
 function fillAreas(){
   const sel = document.getElementById('nw-area');
-  const areas = knownAreas(nwNotebook);
-  sel.innerHTML = areas.map(a => '<option value="' + a + '">' + a + '</option>').join('')
-    + '<option value="__new__">\u2795 neuer Abschnitt\u2026</option>';
+  const used = domAreas(nwNotebook);
+  const usedSet = new Set(used);
+  const folders = folderAreas(nwNotebook).filter(a => !usedSet.has(a)).sort();
+  let html = '';
+  if (used.length) {
+    html += '<optgroup label="In Verwendung">'
+      + used.map(a => '<option value="' + wesc(a) + '">' + wesc(areaLabel(a)) + '</option>').join('')
+      + '</optgroup>';
+  }
+  if (folders.length) {
+    html += '<optgroup label="Ordner ohne ToDos">'
+      + folders.map(a => '<option value="' + wesc(a) + '">' + wesc(areaLabel(a)) + '</option>').join('')
+      + '</optgroup>';
+  }
+  html += '<option value="__new__">\u2795 neuer Abschnitt\u2026</option>';
+  sel.innerHTML = html;
   onAreaChange();
 }
 function onAreaChange(){
