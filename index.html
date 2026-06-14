@@ -68,6 +68,9 @@
   .nomatch { display:none !important; }
   mark.shl { background:#3b3a16; color:#fde68a; border-radius:2px; padding:0 1px; }
   #content [data-id] { cursor:pointer; }
+  #ed-subs { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
+  .ed-subitem { font-size:13px; color:#cdd3df; padding:3px 9px; background:#0f1117; border:1px solid #232733; border-radius:7px; }
+  #ed-subadd { flex:1; }
   #fab { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:46px; height:46px; border-radius:50%; background:#2dd4bf; color:#06231f; font-size:26px; font-weight:700; line-height:1; padding:0; display:flex; align-items:center; justify-content:center; border:3px solid #0f1117; box-shadow:0 2px 10px rgba(0,0,0,.5); cursor:pointer; z-index:2; }
   .seg { display:flex; background:#161922; border:1px solid #232733; border-radius:8px; overflow:hidden; }
   .seg button { padding:6px 12px; border:0; background:transparent; color:#9aa4b2; font-size:13px; cursor:pointer; }
@@ -167,6 +170,10 @@
     <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
     <div class="mdbar"><button type="button" onclick="mdLinePrefix('ed-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('ed-note','**','**')">Fett</button><button type="button" onclick="mdWrap('ed-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('ed-note','# ', true)"># Titel</button></div><textarea id="ed-note" class="mdfield" oninput="noteSync('ed-note')"></textarea><div class="mdprev-lab">Vorschau</div><div id="ed-preview" class="note mdprev"></div>
+    <div id="ed-subwrap"><label class="ed-lab">Unteraufgaben</label>
+      <div id="ed-subs"></div>
+      <div class="ed-row"><input id="ed-subadd" type="text" placeholder="Neue Unteraufgabe&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtask();}"><button onclick="addSubtask()">+</button></div>
+    </div>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeEditor()">Abbrechen</button><button class="ed-ok" onclick="applyEdit()">Speichern</button></div>
   </div>
 </div>
@@ -513,6 +520,8 @@ function openEdit(el){
   document.getElementById('ed-frau').checked = d.frau === '1';
   fillDatalist('dl-texts', allTexts());
   noteSync('ed-note');
+  document.getElementById('ed-subs').innerHTML = '';
+  document.getElementById('ed-subwrap').style.display = editRow.id.indexOf(' › ') === -1 ? '' : 'none';
   if (isWide()) markSelected(el);
   else document.getElementById('editor').style.display = 'flex';
 }
@@ -804,6 +813,19 @@ function preselectFirst(){
   document.body.classList.remove('newmode');   // Detailansicht zeigen, nie im Neu-Modus haengen bleiben
   const first = document.querySelector('#content .pane.active [data-id] .txt');
   if (first) openEdit(first);
+}
+async function addSubtask(){
+  if (!editRow) return;
+  const inp = document.getElementById('ed-subadd');
+  const text = inp.value.trim();
+  if (!text) return;
+  const op = { notebook: editRow.notebook, area: editRow.area, parent: editRow.id, text, created: new Date().toLocaleDateString('sv') };
+  const li = document.createElement('div');
+  li.className = 'ed-subitem';
+  li.textContent = text;
+  document.getElementById('ed-subs').appendChild(li);   // optimistisch sofort
+  inp.value = ''; inp.focus();                          // Feld leeren + Fokus halten
+  await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), adds:[op] });
 }
 // Klick irgendwo auf eine Listen-Karte oeffnet/laedt sie -- nicht nur der Text.
 // Interaktive Teile (Checkbox, Notiz-Icon, Klapp-Pfeile, Links/Buttons) bleiben ausgenommen;
