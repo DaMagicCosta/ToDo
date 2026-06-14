@@ -739,7 +739,14 @@ function reflectEdit(d, ch){
     r.classList.add('edited');
   });
 }
-function applyEdit(){
+function isWide(){ return !!(window.matchMedia && window.matchMedia('(min-width:900px)').matches); }
+function markSelected(el){
+  const card = el.closest('[data-id]');
+  document.querySelectorAll('#content [data-id].selected').forEach(x => x.classList.remove('selected'));
+  if (card) card.classList.add('selected');
+}
+function stageEdit(){
+  if (!editRow) return;
   const d = editRow;
   const newText = document.getElementById('ed-text').value.trim();
   const sel = document.querySelector('#ed-prio .pbtn.sel');
@@ -763,8 +770,8 @@ function applyEdit(){
     toast('\u00c4nderung gemerkt');
   }
   const qel = document.getElementById('q'); if (qel && qel.value) listSearch(qel.value);
-  closeEditor();
 }
+function applyEdit(){ stageEdit(); closeEditor(); }
 function b64bytes(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 async function encryptForInbox(obj, pin){
   const enc = new TextEncoder();
