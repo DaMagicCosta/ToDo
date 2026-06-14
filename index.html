@@ -634,6 +634,51 @@ async function delSection(el){
 }
 function clearDue(){ document.getElementById('ed-due').value = ''; }
 function closeEditor(){ document.getElementById('editor').style.display = 'none'; editRow = null; }
+function prioBadgeHtml(p){
+  if (!p) return '';
+  const c = { hoch:'p-hi', mittel:'p-mid', niedrig:'p-lo' }[p];
+  return c ? '<span class="pri ' + c + '">' + p.toUpperCase() + '</span>' : '';
+}
+function dueBadgeHtml(due){
+  if (!due) return '';
+  const today = new Date().toISOString().slice(0, 10);
+  if (due < today) return '<span class="due soon">\u00fcberf\u00e4llig ' + wesc(due) + '</span>';
+  if (due === today) return '<span class="due soon">heute f\u00e4llig</span>';
+  return '<span class="due">@' + wesc(due) + '</span>';
+}
+function reflectEdit(d, ch){
+  document.querySelectorAll('[data-id]').forEach(r => {
+    if (r.dataset.area !== d.area || r.dataset.id !== d.id) return;
+    if ('text' in ch){
+      r.dataset.text = ch.text;
+      const t = r.querySelector('.txt');
+      if (t){
+        const icon = t.querySelector('svg');
+        t.textContent = '';
+        if (icon){ t.appendChild(icon); t.appendChild(document.createTextNode(' ')); }
+        t.appendChild(document.createTextNode(ch.text));
+      }
+    }
+    const meta = r.querySelector('.meta');
+    if (meta && ('prio' in ch)){
+      r.dataset.prio = ch.prio;
+      const old = meta.querySelector('.pri'); if (old) old.remove();
+      if (ch.prio) meta.insertAdjacentHTML('afterbegin', prioBadgeHtml(ch.prio));
+    }
+    if (meta && ('due' in ch)){
+      r.dataset.due = ch.due;
+      const old = meta.querySelector('.due'); if (old) old.remove();
+      if (ch.due){
+        const html = dueBadgeHtml(ch.due);
+        const pri = meta.querySelector('.pri');
+        if (pri) pri.insertAdjacentHTML('afterend', html);
+        else meta.insertAdjacentHTML('afterbegin', html);
+      }
+    }
+    if ('note' in ch) r.dataset.note = JSON.stringify(ch.note);
+    r.classList.add('edited');
+  });
+}
 function applyEdit(){
   const d = editRow;
   const newText = document.getElementById('ed-text').value.trim();
@@ -654,9 +699,7 @@ function applyEdit(){
   if (newNote !== d.note) ch.note = newNote;
   if (Object.keys(ch).length > 4) {
     EDITS[d.area + '\u0000' + d.id] = ch;
-    document.querySelectorAll('[data-id]').forEach(r => {
-      if (r.dataset.area === d.area && r.dataset.id === d.id) r.classList.add('edited');
-    });
+    reflectEdit(d, ch);
     toast('\u00c4nderung gemerkt');
   }
   closeEditor();
