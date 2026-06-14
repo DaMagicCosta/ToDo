@@ -531,18 +531,19 @@ function openEdit(el, focusLog=true){
   fillDatalist('dl-texts', allTexts());
   noteSync('ed-note');
   document.getElementById('ed-subs').innerHTML = '';
-  // ' › ' (U+203A) muss synchron zu render.py _sub_row bleiben: Unteraufgabe -> Abschnitt aus
-  document.getElementById('ed-subwrap').style.display = editRow.id.indexOf(' › ') === -1 ? '' : 'none';
+  // Reiche Bearbeitung (Unteraufgaben + Verlauf) nur fuer normale Top-Level-ToDos:
+  // keine Unteraufgaben (' › ' U+203A, synchron zu render.py _sub_row) und keine Wiki-Items
+  // (Server kann fuer Wiki weder Verlauf noch Unteraufgaben speichern -> Ops werden abgelehnt,
+  //  sonst haengen optimistische Eintraege fest).
+  const _richOk = editRow.wiki !== '1' && editRow.id.indexOf(' › ') === -1;
+  document.getElementById('ed-subwrap').style.display = _richOk ? '' : 'none';
   const _logBox = document.getElementById('ed-log');
   _logBox.innerHTML = '';
   _nl.entries.forEach(e => _logBox.appendChild(logItemEl(e.ts, e.text)));
-  // Verlauf nur fuer normale Top-Level-ToDos: keine Unteraufgaben (' › ') und keine Wiki-Items
-  // (Server kann fuer Wiki keinen Verlauf speichern -> _apply_log lehnt ab; sonst haengen Eintraege optimistisch fest).
-  const _logOk = editRow.wiki !== '1' && editRow.id.indexOf(' › ') === -1;
-  document.getElementById('ed-logwrap').style.display = _logOk ? '' : 'none';
+  document.getElementById('ed-logwrap').style.display = _richOk ? '' : 'none';
   if (isWide()) markSelected(el);
   else document.getElementById('editor').style.display = 'flex';
-  if (focusLog && _logOk) document.getElementById('ed-logadd').focus();
+  if (focusLog && _richOk) document.getElementById('ed-logadd').focus();
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
@@ -892,6 +893,7 @@ function flushLogDraft(){
 }
 async function addSubtask(){
   if (!editRow) return;
+  if (editRow.wiki === '1') return;   // Wiki-Items koennen serverseitig keine Unteraufgaben anlegen
   const inp = document.getElementById('ed-subadd');
   const text = inp.value.trim();
   if (!text) return;
