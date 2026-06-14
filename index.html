@@ -136,7 +136,7 @@
     <button class="btn-copy" onclick="submitChanges()"><svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg> Senden</button>
   </div>
 </div>
-<div id="editor" onclick="if(event.target===this)applyEdit()">
+<div id="editor" onclick="if(event.target===this&&!isWide())applyEdit()">
   <div class="ed-box ed-box-note">
     <h3>ToDo bearbeiten</h3>
     <label class="ed-lab">Text</label>
