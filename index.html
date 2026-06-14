@@ -762,6 +762,7 @@ function applyEdit(){
     reflectEdit(d, ch);
     toast('\u00c4nderung gemerkt');
   }
+  const qel = document.getElementById('q'); if (qel && qel.value) listSearch(qel.value);
   closeEditor();
 }
 function b64bytes(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
