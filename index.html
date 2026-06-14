@@ -77,7 +77,8 @@
   #printhead { display:none; }
   @media print {
     body { background:#fff; color:#000; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .gate, #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec { display:none !important; }
+    .gate, #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec, .grpprint { display:none !important; }
+    body.print-section .grp:not(.printtarget) { display:none !important; }
     #printhead { display:flex; justify-content:space-between; font-weight:600; border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:12px; }
     .pane { padding:0; max-width:none; }
     .pane h4 { color:#000; }
@@ -210,6 +211,19 @@ function applyFilter(f){
   document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('sel', b.dataset.f === f));
 }
 function setFilter(b){ const f = b.dataset.f; localStorage.setItem('todoFilter', f); applyFilter(f); }
+function printSection(el, ev){
+  ev.stopPropagation(); ev.preventDefault();
+  const grp = el.closest('details.grp');
+  if (!grp) return;
+  const area = grp.dataset.area || '';
+  [grp, ...grp.querySelectorAll('details')].forEach(d => { if (!d.open) d.dataset.reclose = '1'; d.open = true; });
+  grp.classList.add('printtarget');
+  document.body.classList.add('print-section');
+  const datum = new Date().toLocaleDateString('de-DE');
+  document.getElementById('printhead').innerHTML =
+    '<span>ToDos \u00b7 ' + area + '</span><span>' + datum + '</span>';
+  window.print();
+}
 function printNow(){
   const act = document.querySelector('.tab.active');
   const tabName = act ? act.textContent.trim() : '';
@@ -226,6 +240,8 @@ function printNow(){
 }
 window.addEventListener('afterprint', () => {
   document.querySelectorAll('details[data-reclose]').forEach(d => { d.open = false; delete d.dataset.reclose; });
+  document.body.classList.remove('print-section');
+  document.querySelectorAll('.printtarget').forEach(g => g.classList.remove('printtarget'));
 });
 function switchTab(el){
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
