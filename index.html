@@ -448,16 +448,27 @@ function openEdit(el){
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
-function knownAreas(notebook){
+function areaLabel(raw){
+  const fel = document.getElementById('allareas');
+  if (fel) {
+    try { const m = JSON.parse(fel.dataset.labels || '{}'); if (m[raw]) return m[raw]; } catch(_){}
+  }
+  return raw;
+}
+function domAreas(notebook){
   const set = new Set();
   document.querySelectorAll('[data-area][data-notebook]').forEach(el => {
     if (el.dataset.notebook === notebook && el.dataset.wiki === '0' && el.dataset.area) set.add(el.dataset.area);
   });
-  const fel = document.getElementById('allareas');
-  if (fel) {
-    try { (JSON.parse(fel.dataset.folders || '{}')[notebook] || []).forEach(a => set.add(a)); } catch(_){}
-  }
   return [...set].sort();
+}
+function folderAreas(notebook){
+  const fel = document.getElementById('allareas');
+  if (!fel) return [];
+  try { return (JSON.parse(fel.dataset.folders || '{}')[notebook] || []).slice(); } catch(_){ return []; }
+}
+function knownAreas(notebook){
+  return [...new Set([...domAreas(notebook), ...folderAreas(notebook)])].sort();
 }
 function allTexts(){ return [...document.querySelectorAll('#content [data-text]')].map(el => el.dataset.text); }
 function fillDatalist(id, values){
