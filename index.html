@@ -577,9 +577,11 @@ function pickNb(b){
 }
 function pickNewPrio(b){ document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 function openNew(){
+  if (isWide()) stageEdit();   // vorigen Editiereintrag merken, bevor zum Neu-Formular gewechselt wird
   nwNotebook = 'Arbeit';
   document.querySelectorAll('#nw-nb button').forEach(x => x.classList.toggle('sel', x.dataset.v === 'Arbeit'));
   document.getElementById('nw-text').value = '';
+  document.getElementById('nw-newsec').value = '';
   document.getElementById('nw-due').value = '';
   document.getElementById('nw-sixt').checked = false;
   document.getElementById('nw-familie').checked = false;
@@ -589,10 +591,14 @@ function openNew(){
   fillAreas();
   fillDatalist('dl-texts', allTexts());
   fillDatalist('dl-areas', knownAreas('Arbeit').concat(knownAreas('Privat')));
-  document.getElementById('newdlg').style.display = 'flex';
   noteSync('nw-note');
+  if (isWide()) document.body.classList.add('newmode');
+  else document.getElementById('newdlg').style.display = 'flex';
 }
-function closeNew(){ document.getElementById('newdlg').style.display = 'none'; }
+function closeNew(){
+  if (isWide()) { document.body.classList.remove('newmode'); preselectFirst(); return; }
+  document.getElementById('newdlg').style.display = 'none';
+}
 function mdEsc(s){ return (s || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function mdInline(s){
   return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
