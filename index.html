@@ -174,8 +174,8 @@
     <label class="ed-lab">Notiz</label>
     <div class="mdbar"><button type="button" onclick="mdLinePrefix('ed-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('ed-note','**','**')">Fett</button><button type="button" onclick="mdWrap('ed-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('ed-note','# ', true)"># Titel</button></div><textarea id="ed-note" class="mdfield" oninput="noteSync('ed-note')"></textarea><div class="mdprev-lab">Vorschau</div><div id="ed-preview" class="note mdprev"></div>
     <div id="ed-logwrap"><label class="ed-lab">Verlauf</label>
-      <div id="ed-log"></div>
       <div class="ed-row"><input id="ed-logadd" type="text" placeholder="Neuer Eintrag&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addLog();}"><button onclick="addLog()">+</button></div>
+      <div id="ed-log"></div>
     </div>
     <div id="ed-subwrap"><label class="ed-lab">Unteraufgaben</label>
       <div id="ed-subs"></div>
