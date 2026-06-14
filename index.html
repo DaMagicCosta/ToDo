@@ -67,6 +67,7 @@
   #q { width:100%; padding:8px 10px; font-size:14px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
   .nomatch { display:none !important; }
   mark.shl { background:#3b3a16; color:#fde68a; border-radius:2px; padding:0 1px; }
+  #content [data-id] { cursor:pointer; }
   .seg { display:flex; background:#161922; border:1px solid #232733; border-radius:8px; overflow:hidden; }
   .seg button { padding:6px 12px; border:0; background:transparent; color:#9aa4b2; font-size:13px; cursor:pointer; }
   .seg button.sel { background:#2dd4bf; color:#06231f; font-weight:600; }
@@ -791,6 +792,14 @@ function preselectFirst(){
   const first = document.querySelector('#content .pane.active [data-id] .txt');
   if (first) openEdit(first);
 }
+// Klick irgendwo auf eine Listen-Karte oeffnet/laedt sie -- nicht nur der Text.
+// Interaktive Teile (Checkbox, Notiz-Icon, Klapp-Pfeile, Links/Buttons) bleiben ausgenommen;
+// .txt hat seinen eigenen onclick -> hier ausnehmen, damit es nicht doppelt feuert.
+document.addEventListener('click', e => {
+  if (e.target.closest('.chk, .noteico, summary, a, input, button, .delsec, .grpprint, .txt')) return;
+  const card = e.target.closest('#content [data-id]');
+  if (card) openEdit(card);
+});
 function b64bytes(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 async function encryptForInbox(obj, pin){
   const enc = new TextEncoder();
