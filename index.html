@@ -84,7 +84,9 @@
   @media (min-width:900px){
     body.unlocked #app { margin-right:42%; }
     body.unlocked .toolbar { right:42%; }
-    body.unlocked #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
+    body.unlocked:not(.newmode) #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
+    body.unlocked.newmode #newdlg { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
+    body.unlocked.newmode #newdlg .ed-box { max-width:none; border:0; background:transparent; padding:0; }
     #editor .ed-box { max-width:none; border:0; background:transparent; padding:0; }
     #editor .ed-actions { display:none; }
     #content [data-id].selected { outline:2px solid #2dd4bf; outline-offset:-2px; border-radius:8px; }
