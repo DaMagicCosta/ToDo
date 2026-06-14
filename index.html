@@ -79,6 +79,13 @@
   #nw-prio .pbtn { flex:1; padding:8px 0; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; font-size:13px; }
   #nw-prio .pbtn.sel { background:#2dd4bf; color:#06231f; border-color:#2dd4bf; font-weight:600; }
   #printhead { display:none; }
+  @media (min-width:900px){
+    #app { margin-right:42%; }
+    .toolbar { right:42%; }
+    #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
+    #editor .ed-box { max-width:none; border:0; background:transparent; padding:0; }
+    #content [data-id].selected { outline:2px solid #2dd4bf; outline-offset:-2px; border-radius:8px; }
+  }
   @media print {
     body { background:#fff; color:#000; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .gate, #pull, #filterbar, #searchbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec, .grpprint { display:none !important; }
