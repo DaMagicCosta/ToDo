@@ -521,6 +521,7 @@ function openEdit(el){
   fillDatalist('dl-texts', allTexts());
   noteSync('ed-note');
   document.getElementById('ed-subs').innerHTML = '';
+  // ' › ' (U+203A) muss synchron zu render.py _sub_row bleiben: Unteraufgabe -> Abschnitt aus
   document.getElementById('ed-subwrap').style.display = editRow.id.indexOf(' › ') === -1 ? '' : 'none';
   if (isWide()) markSelected(el);
   else document.getElementById('editor').style.display = 'flex';
@@ -820,10 +821,10 @@ async function addSubtask(){
   const text = inp.value.trim();
   if (!text) return;
   const op = { notebook: editRow.notebook, area: editRow.area, parent: editRow.id, text, created: new Date().toLocaleDateString('sv') };
-  const li = document.createElement('div');
-  li.className = 'ed-subitem';
-  li.textContent = text;
-  document.getElementById('ed-subs').appendChild(li);   // optimistisch sofort
+  const item = document.createElement('div');
+  item.className = 'ed-subitem';
+  item.textContent = text;
+  document.getElementById('ed-subs').appendChild(item);   // optimistisch sofort
   inp.value = ''; inp.focus();                          // Feld leeren + Fokus halten
   await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), adds:[op] });
 }
