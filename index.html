@@ -66,6 +66,7 @@
   #searchbar { padding:8px 16px 0; }
   #q { width:100%; padding:8px 10px; font-size:14px; border-radius:8px; border:1px solid #232733; background:#0f1117; color:#e6e9ef; }
   .nomatch { display:none !important; }
+  mark.shl { background:#3b3a16; color:#fde68a; border-radius:2px; padding:0 1px; }
   .seg { display:flex; background:#161922; border:1px solid #232733; border-radius:8px; overflow:hidden; }
   .seg button { padding:6px 12px; border:0; background:transparent; color:#9aa4b2; font-size:13px; cursor:pointer; }
   .seg button.sel { background:#2dd4bf; color:#06231f; font-weight:600; }
@@ -80,7 +81,7 @@
   #printhead { display:none; }
   @media print {
     body { background:#fff; color:#000; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .gate, #pull, #filterbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec, .grpprint { display:none !important; }
+    .gate, #pull, #filterbar, #searchbar, .toolbar, .tabs, #editor, #newdlg, #notedlg, #fallback, #toast, .noteico, .donewrap, .delsec, .grpprint { display:none !important; }
     body.print-section .grp:not(.printtarget) { display:none !important; }
     #printhead { display:flex; justify-content:space-between; font-weight:600; border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:12px; }
     .pane { padding:0; max-width:none; }
@@ -230,7 +231,33 @@ function listSearch(q){
   });
   highlightMatches(content, q);
 }
-function highlightMatches(content, q){ /* Task 3 */ }
+function highlightMatches(content, q){
+  // alte Markierungen entfernen
+  content.querySelectorAll('mark.shl').forEach(m => m.replaceWith(document.createTextNode(m.textContent)));
+  content.querySelectorAll('.txt').forEach(t => t.normalize());
+  if (!q) return;
+  content.querySelectorAll('[data-text]:not(.nomatch) .txt').forEach(txt => {
+    [...txt.childNodes].forEach(node => {
+      if (node.nodeType !== 3) return;
+      const s = node.nodeValue, low = s.toLowerCase();
+      let i = low.indexOf(q);
+      if (i < 0) return;
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      while (i >= 0){
+        frag.appendChild(document.createTextNode(s.slice(last, i)));
+        const m = document.createElement('mark');
+        m.className = 'shl';
+        m.textContent = s.slice(i, i + q.length);
+        frag.appendChild(m);
+        last = i + q.length;
+        i = low.indexOf(q, last);
+      }
+      frag.appendChild(document.createTextNode(s.slice(last)));
+      node.replaceWith(frag);
+    });
+  });
+}
 function applyFilter(f){
   document.body.classList.remove('f-arbeit','f-privat');
   if (f) document.body.classList.add('f-' + f);
