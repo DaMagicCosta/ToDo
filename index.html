@@ -536,10 +536,13 @@ function openEdit(el, focusLog=true){
   const _logBox = document.getElementById('ed-log');
   _logBox.innerHTML = '';
   _nl.entries.forEach(e => _logBox.appendChild(logItemEl(e.ts, e.text)));
-  document.getElementById('ed-logwrap').style.display = editRow.id.indexOf(' › ') === -1 ? '' : 'none';
+  // Verlauf nur fuer normale Top-Level-ToDos: keine Unteraufgaben (' › ') und keine Wiki-Items
+  // (Server kann fuer Wiki keinen Verlauf speichern -> _apply_log lehnt ab; sonst haengen Eintraege optimistisch fest).
+  const _logOk = editRow.wiki !== '1' && editRow.id.indexOf(' › ') === -1;
+  document.getElementById('ed-logwrap').style.display = _logOk ? '' : 'none';
   if (isWide()) markSelected(el);
   else document.getElementById('editor').style.display = 'flex';
-  if (focusLog && editRow.id.indexOf(' › ') === -1) document.getElementById('ed-logadd').focus();
+  if (focusLog && _logOk) document.getElementById('ed-logadd').focus();
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
@@ -865,6 +868,7 @@ function logItemEl(ts, text){
 }
 async function addLog(){
   if (!editRow) return;
+  if (editRow.wiki === '1') return;   // Wiki-Items koennen serverseitig keinen Verlauf speichern
   const inp = document.getElementById('ed-logadd');
   const text = inp.value.trim();
   if (!text) return;
