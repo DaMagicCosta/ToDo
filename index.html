@@ -690,6 +690,7 @@ async function saveNew(){
     sections.push({ op:'add', notebook:nwNotebook, name:area });
   }
   const add = { notebook:nwNotebook, area, text };
+  add.created = new Date().toISOString().slice(0, 10);
   const prioSel = document.querySelector('#nw-prio .pbtn.sel');
   if (prioSel && prioSel.dataset.v) add.prio = prioSel.dataset.v;
   const due = document.getElementById('nw-due').value;
