@@ -476,6 +476,7 @@ function fillDatalist(id, values){
   if (!dl) return;
   dl.innerHTML = [...new Set(values)].filter(Boolean).sort().map(v => '<option value="' + wesc(v) + '">').join('');
 }
+function areaOpt(a){ return '<option value="' + wesc(a) + '">' + wesc(areaLabel(a)) + '</option>'; }
 function fillAreas(){
   const sel = document.getElementById('nw-area');
   const used = domAreas(nwNotebook);
@@ -484,12 +485,12 @@ function fillAreas(){
   let html = '';
   if (used.length) {
     html += '<optgroup label="In Verwendung">'
-      + used.map(a => '<option value="' + wesc(a) + '">' + wesc(areaLabel(a)) + '</option>').join('')
+      + used.map(areaOpt).join('')
       + '</optgroup>';
   }
   if (folders.length) {
     html += '<optgroup label="Ordner ohne ToDos">'
-      + folders.map(a => '<option value="' + wesc(a) + '">' + wesc(areaLabel(a)) + '</option>').join('')
+      + folders.map(areaOpt).join('')
       + '</optgroup>';
   }
   html += '<option value="__new__">\u2795 neuer Abschnitt\u2026</option>';
