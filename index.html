@@ -68,6 +68,9 @@
   .nomatch { display:none !important; }
   mark.shl { background:#3b3a16; color:#fde68a; border-radius:2px; padding:0 1px; }
   #content [data-id] { cursor:pointer; }
+  #ed-log { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
+  .ed-logitem { font-size:13px; color:#cdd3df; padding:3px 9px; background:#0f1117; border:1px solid #232733; border-radius:7px; }
+  #ed-logadd { flex:1; }
   #ed-subs { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
   .ed-subitem { font-size:13px; color:#cdd3df; padding:3px 9px; background:#0f1117; border:1px solid #232733; border-radius:7px; }
   #ed-subadd { flex:1; }
@@ -170,6 +173,10 @@
     <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
     <div class="mdbar"><button type="button" onclick="mdLinePrefix('ed-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('ed-note','**','**')">Fett</button><button type="button" onclick="mdWrap('ed-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('ed-note','# ', true)"># Titel</button></div><textarea id="ed-note" class="mdfield" oninput="noteSync('ed-note')"></textarea><div class="mdprev-lab">Vorschau</div><div id="ed-preview" class="note mdprev"></div>
+    <div id="ed-logwrap"><label class="ed-lab">Verlauf</label>
+      <div id="ed-log"></div>
+      <div class="ed-row"><input id="ed-logadd" type="text" placeholder="Neuer Eintrag&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addLog();}"><button onclick="addLog()">+</button></div>
+    </div>
     <div id="ed-subwrap"><label class="ed-lab">Unteraufgaben</label>
       <div id="ed-subs"></div>
       <div class="ed-row"><input id="ed-subadd" type="text" placeholder="Neue Unteraufgabe&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtask();}"><button onclick="addSubtask()">+</button></div>
@@ -507,12 +514,15 @@ window.addEventListener('touchend', () => {
 }, { passive: true });
 const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?,familie?,frau?}
 let editRow = null;
-function openEdit(el){
+function openEdit(el, focusLog=true){
+  flushLogDraft();             // offenen Verlauf-Entwurf des vorigen ToDos uebernehmen
   if (isWide()) stageEdit();   // Auto-merken: vorigen Eintrag sichern, bevor gewechselt wird
   const d = el.closest('[data-id]').dataset;
   editRow = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
   document.getElementById('ed-text').value = d.text;
-  document.getElementById('ed-note').value = editRow.note;
+  const _nl = splitNoteLog(editRow.note);
+  editRow.note = _nl.free;
+  document.getElementById('ed-note').value = _nl.free;
   document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
   document.getElementById('ed-due').value = d.due || '';
   document.getElementById('ed-sixt').checked = d.sixt === '1';
@@ -523,8 +533,13 @@ function openEdit(el){
   document.getElementById('ed-subs').innerHTML = '';
   // ' › ' (U+203A) muss synchron zu render.py _sub_row bleiben: Unteraufgabe -> Abschnitt aus
   document.getElementById('ed-subwrap').style.display = editRow.id.indexOf(' › ') === -1 ? '' : 'none';
+  const _logBox = document.getElementById('ed-log');
+  _logBox.innerHTML = '';
+  _nl.entries.forEach(e => _logBox.appendChild(logItemEl(e.ts, e.text)));
+  document.getElementById('ed-logwrap').style.display = editRow.id.indexOf(' › ') === -1 ? '' : 'none';
   if (isWide()) markSelected(el);
   else document.getElementById('editor').style.display = 'flex';
+  if (focusLog && editRow.id.indexOf(' › ') === -1) document.getElementById('ed-logadd').focus();
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
@@ -588,6 +603,7 @@ function pickNb(b){
 function pickNewPrio(b){ document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 function openNew(){
   const wide = isWide();
+  flushLogDraft();
   if (wide) { stageEdit(); editRow = null; }   // vorigen Editiereintrag merken, dann fuer den Neu-Modus loslassen
   nwNotebook = 'Arbeit';
   document.querySelectorAll('#nw-nb button').forEach(x => x.classList.toggle('sel', x.dataset.v === 'Arbeit'));
@@ -722,7 +738,7 @@ async function delSection(el){
   toast(ok ? 'L\u00f6schen gesendet' : 'offline \u2013 gespeichert');
 }
 function clearDue(){ document.getElementById('ed-due').value = ''; }
-function closeEditor(){ if (isWide()) return; document.getElementById('editor').style.display = 'none'; editRow = null; }
+function closeEditor(){ flushLogDraft(); if (isWide()) return; document.getElementById('editor').style.display = 'none'; editRow = null; }
 function prioBadgeHtml(p){
   if (!p) return '';
   const c = { hoch:'p-hi', mittel:'p-mid', niedrig:'p-lo' }[p];
@@ -813,7 +829,47 @@ function preselectFirst(){
   if (!isWide()) return;
   document.body.classList.remove('newmode');   // Detailansicht zeigen, nie im Neu-Modus haengen bleiben
   const first = document.querySelector('#content .pane.active [data-id] .txt');
-  if (first) openEdit(first);
+  if (first) openEdit(first, false);
+}
+function pad2(n){ return String(n).padStart(2,'0'); }
+function localTs(){
+  const d = new Date();
+  return d.toLocaleDateString('sv') + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function splitNoteLog(note){
+  const free = [], entries = [];
+  (note || '').split('\n').forEach(line => {
+    const m = line.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\] (.*)$/);
+    if (m) entries.push({ ts: m[1], text: m[2] });
+    else free.push(line);
+  });
+  return { free: free.join('\n'), entries };
+}
+function fmtTsDe(ts){
+  const [date, time] = ts.split(' ');
+  const [y, m, dd] = date.split('-');
+  return dd + '.' + m + '.' + y + ' ' + time;
+}
+function logItemEl(ts, text){
+  const el = document.createElement('div');
+  el.className = 'ed-logitem';
+  el.textContent = fmtTsDe(ts) + '  ' + text;
+  return el;
+}
+async function addLog(){
+  if (!editRow) return;
+  const inp = document.getElementById('ed-logadd');
+  const text = inp.value.trim();
+  if (!text) return;
+  const ts = localTs();
+  const op = { notebook: editRow.notebook, area: editRow.area, id: editRow.id, ts, text };
+  document.getElementById('ed-log').appendChild(logItemEl(ts, text));   // optimistisch unten
+  inp.value = ''; inp.focus();
+  await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), logs:[op] });
+}
+function flushLogDraft(){
+  const inp = document.getElementById('ed-logadd');
+  if (inp && inp.value.trim()) addLog();
 }
 async function addSubtask(){
   if (!editRow) return;
@@ -878,6 +934,7 @@ async function sendOrQueue(sub){
 }
 window.addEventListener('online', flushQueue);
 async function submitChanges(){
+  flushLogDraft();
   stageEdit();
   const done=[], edits=[];
   document.querySelectorAll('#content .chk:checked').forEach(c => {
