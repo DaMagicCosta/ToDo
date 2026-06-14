@@ -659,20 +659,28 @@ function reflectEdit(d, ch){
         t.appendChild(document.createTextNode(ch.text));
       }
     }
+    // Fokus-Karten haben einen .meta-Wrapper; Struktur-Zeilen (.item) nicht -> dann an .txt ankern.
+    // Badge-HTML spiegelt render.py _prio_badge/_due_badge; bei \u00c4nderung dort hier mitziehen.
     const meta = r.querySelector('.meta');
-    if (meta && ('prio' in ch)){
+    const txt = r.querySelector('.txt');
+    if ('prio' in ch){
       r.dataset.prio = ch.prio;
-      const old = meta.querySelector('.pri'); if (old) old.remove();
-      if (ch.prio) meta.insertAdjacentHTML('afterbegin', prioBadgeHtml(ch.prio));
+      const old = (meta || r).querySelector('.pri'); if (old) old.remove();
+      if (ch.prio){
+        const html = prioBadgeHtml(ch.prio);
+        if (meta) meta.insertAdjacentHTML('afterbegin', html);
+        else if (txt) txt.insertAdjacentHTML('afterend', html);
+      }
     }
-    if (meta && ('due' in ch)){
+    if ('due' in ch){
       r.dataset.due = ch.due;
-      const old = meta.querySelector('.due'); if (old) old.remove();
+      const old = (meta || r).querySelector('.due'); if (old) old.remove();
       if (ch.due){
         const html = dueBadgeHtml(ch.due);
-        const pri = meta.querySelector('.pri');
+        const pri = (meta || r).querySelector('.pri');
         if (pri) pri.insertAdjacentHTML('afterend', html);
-        else meta.insertAdjacentHTML('afterbegin', html);
+        else if (meta) meta.insertAdjacentHTML('afterbegin', html);
+        else if (txt) txt.insertAdjacentHTML('afterend', html);
       }
     }
     if ('note' in ch) r.dataset.note = JSON.stringify(ch.note);
