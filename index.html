@@ -427,6 +427,10 @@ function knownAreas(notebook){
   document.querySelectorAll('[data-area][data-notebook]').forEach(el => {
     if (el.dataset.notebook === notebook && el.dataset.wiki === '0' && el.dataset.area) set.add(el.dataset.area);
   });
+  const fel = document.getElementById('allareas');
+  if (fel) {
+    try { (JSON.parse(fel.dataset.folders || '{}')[notebook] || []).forEach(a => set.add(a)); } catch(_){}
+  }
   return [...set].sort();
 }
 function fillAreas(){
