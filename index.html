@@ -84,6 +84,7 @@
     .toolbar { right:42%; }
     #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:#0f1117; border-left:1px solid #232733; padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
     #editor .ed-box { max-width:none; border:0; background:transparent; padding:0; }
+    #editor .ed-actions { display:none; }
     #content [data-id].selected { outline:2px solid #2dd4bf; outline-offset:-2px; border-radius:8px; }
   }
   @media print {
@@ -697,7 +698,7 @@ async function delSection(el){
   toast(ok ? 'L\u00f6schen gesendet' : 'offline \u2013 gespeichert');
 }
 function clearDue(){ document.getElementById('ed-due').value = ''; }
-function closeEditor(){ document.getElementById('editor').style.display = 'none'; editRow = null; }
+function closeEditor(){ if (isWide()) return; document.getElementById('editor').style.display = 'none'; editRow = null; }
 function prioBadgeHtml(p){
   if (!p) return '';
   const c = { hoch:'p-hi', mittel:'p-mid', niedrig:'p-lo' }[p];
@@ -831,6 +832,7 @@ async function sendOrQueue(sub){
 }
 window.addEventListener('online', flushQueue);
 async function submitChanges(){
+  stageEdit();
   const done=[], edits=[];
   document.querySelectorAll('#content .chk:checked').forEach(c => {
     const d = c.closest('[data-id]').dataset;
