@@ -451,7 +451,7 @@ let nwNotebook = 'Arbeit';
 function areaLabel(raw){
   const fel = document.getElementById('allareas');
   if (fel) {
-    try { const m = JSON.parse(fel.dataset.labels || '{}'); if (m[raw]) return m[raw]; } catch(_){}
+    try { const m = JSON.parse(fel.dataset.labels || '{}'); if (m[raw] !== undefined) return m[raw]; } catch(_){}
   }
   return raw;
 }
