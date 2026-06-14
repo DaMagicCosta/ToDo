@@ -309,6 +309,7 @@ function switchTab(el){
   el.classList.add('active');
   document.getElementById(el.dataset.pane).classList.add('active');
   if (el.dataset.pane === 'wiki') openWiki();
+  preselectFirst();
 }
 let WIKI = null;        // key -> record, nur im Speicher (KEIN localStorage = Klartext-Schutz)
 let WIKI_STACK = [];    // Navigations-/Zurück-Stack der Notiz-Keys
@@ -427,6 +428,7 @@ async function unlock(){
     PIN = pin;
     INBOX = env.inbox || null;
     document.getElementById('content').innerHTML = env.html;
+    preselectFirst();
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     applyFilter(localStorage.getItem('todoFilter') || '');
@@ -454,6 +456,7 @@ async function refresh(){
     Object.keys(EDITS).forEach(k => delete EDITS[k]);
     document.getElementById('content').innerHTML = env.html;
     const qel = document.getElementById('q'); if (qel) qel.value = '';
+    preselectFirst();
     document.getElementById('fallback').style.display = 'none';
     const at = document.querySelector('.tab.active');
     if (at && at.dataset.pane === 'wiki' && WIKI && WIKI_STACK.length) {
@@ -781,6 +784,11 @@ function stageEdit(){
   const qel = document.getElementById('q'); if (qel && qel.value) listSearch(qel.value);
 }
 function applyEdit(){ stageEdit(); closeEditor(); }
+function preselectFirst(){
+  if (!isWide()) return;
+  const first = document.querySelector('#content .pane.active [data-id] .txt');
+  if (first) openEdit(first);
+}
 function b64bytes(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 async function encryptForInbox(obj, pin){
   const enc = new TextEncoder();
