@@ -70,9 +70,6 @@
   .nomatch { display:none !important; }
   mark.shl { background:#3b3a16; color:#fde68a; border-radius:2px; padding:0 1px; }
   #content [data-id] { cursor:pointer; }
-  #ed-log { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
-  .ed-logitem { font-size:13px; color:#cdd3df; padding:3px 9px; background:#0f1117; border:1px solid #232733; border-radius:7px; }
-  #ed-logadd { flex:1; }
   #ed-subs { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
   .ed-subitem { font-size:13px; color:#cdd3df; padding:3px 9px; background:#0f1117; border:1px solid #232733; border-radius:7px; }
   #ed-subadd { flex:1; }
@@ -175,10 +172,6 @@
     <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
     <div class="mdbar"><button type="button" onclick="mdLinePrefix('ed-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('ed-note','**','**')">Fett</button><button type="button" onclick="mdWrap('ed-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('ed-note','# ', true)"># Titel</button><button type="button" onclick="mdDatedEntry('ed-note')">+ Eintrag</button></div><textarea id="ed-note" class="mdfield" oninput="noteSync('ed-note')"></textarea><div class="mdprev-lab">Vorschau</div><div id="ed-preview" class="note mdprev"></div>
-    <div id="ed-logwrap"><label class="ed-lab">Verlauf</label>
-      <div class="ed-row"><input id="ed-logadd" type="text" placeholder="Neuer Eintrag&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addLog();}"><button onclick="addLog()">+</button></div>
-      <div id="ed-log"></div>
-    </div>
     <div id="ed-subwrap"><label class="ed-lab">Unteraufgaben</label>
       <div id="ed-subs"></div>
       <div class="ed-row"><input id="ed-subadd" type="text" placeholder="Neue Unteraufgabe&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtask();}"><button onclick="addSubtask()">+</button></div>
@@ -230,7 +223,7 @@
 let PIN = null;
 let INBOX = null;
 const ICON_EYE = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg>'; const ICON_EYE_SLASH = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></svg>';
-const SHELL_VERSION = "89e306b77c8f";
+const SHELL_VERSION = "14469400a0fb";
 async function checkShellUpdate(){
   try {
     const r = await fetch('index.html', { cache: 'no-store' });
@@ -535,14 +528,11 @@ window.addEventListener('touchend', () => {
 const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?,familie?,frau?}
 let editRow = null;
 function openEdit(el, focusLog=true){
-  flushLogDraft();             // offenen Verlauf-Entwurf des vorigen ToDos uebernehmen
   if (isWide()) stageEdit();   // Auto-merken: vorigen Eintrag sichern, bevor gewechselt wird
   const d = el.closest('[data-id]').dataset;
   editRow = { area:d.area, id:d.id, notebook:d.notebook, wiki:d.wiki, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
   document.getElementById('ed-text').value = d.text;
-  const _nl = splitNoteLog(editRow.note);
-  editRow.note = _nl.free;
-  document.getElementById('ed-note').value = _nl.free;
+  document.getElementById('ed-note').value = editRow.note;
   document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
   document.getElementById('ed-due').value = d.due || '';
   document.getElementById('ed-sixt').checked = d.sixt === '1';
@@ -551,19 +541,13 @@ function openEdit(el, focusLog=true){
   fillDatalist('dl-texts', allTexts());
   noteSync('ed-note');
   document.getElementById('ed-subs').innerHTML = '';
-  // Reiche Bearbeitung (Unteraufgaben + Verlauf) nur fuer normale Top-Level-ToDos:
+  // Unteraufgaben nur fuer normale Top-Level-ToDos anbieten:
   // keine Unteraufgaben (' › ' U+203A, synchron zu render.py _sub_row) und keine Wiki-Items
-  // (Server kann fuer Wiki weder Verlauf noch Unteraufgaben speichern -> Ops werden abgelehnt,
+  // (Server kann fuer Wiki keine Unteraufgaben speichern -> Ops werden abgelehnt,
   //  sonst haengen optimistische Eintraege fest).
-  const _richOk = editRow.wiki !== '1' && editRow.id.indexOf(' › ') === -1;
-  document.getElementById('ed-subwrap').style.display = _richOk ? '' : 'none';
-  const _logBox = document.getElementById('ed-log');
-  _logBox.innerHTML = '';
-  _nl.entries.forEach(e => _logBox.appendChild(logItemEl(e.ts, e.text)));
-  document.getElementById('ed-logwrap').style.display = _richOk ? '' : 'none';
+  document.getElementById('ed-subwrap').style.display = (editRow.wiki !== '1' && editRow.id.indexOf(' › ') === -1) ? '' : 'none';
   if (isWide()) markSelected(el);
   else document.getElementById('editor').style.display = 'flex';
-  if (focusLog && _richOk) document.getElementById('ed-logadd').focus();
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
@@ -627,7 +611,6 @@ function pickNb(b){
 function pickNewPrio(b){ document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 function openNew(){
   const wide = isWide();
-  flushLogDraft();
   if (wide) { stageEdit(); editRow = null; }   // vorigen Editiereintrag merken, dann fuer den Neu-Modus loslassen
   nwNotebook = 'Arbeit';
   document.querySelectorAll('#nw-nb button').forEach(x => x.classList.toggle('sel', x.dataset.v === 'Arbeit'));
@@ -762,7 +745,7 @@ async function delSection(el){
   toast(ok ? 'L\u00f6schen gesendet' : 'offline \u2013 gespeichert');
 }
 function clearDue(){ document.getElementById('ed-due').value = ''; }
-function closeEditor(){ flushLogDraft(); if (isWide()) return; document.getElementById('editor').style.display = 'none'; editRow = null; }
+function closeEditor(){ if (isWide()) return; document.getElementById('editor').style.display = 'none'; editRow = null; }
 function prioBadgeHtml(p){
   if (!p) return '';
   const c = { hoch:'p-hi', mittel:'p-mid', niedrig:'p-lo' }[p];
@@ -813,8 +796,7 @@ function reflectEdit(d, ch){
       }
     }
     if ('note' in ch){
-      const _prevEntries = splitNoteLog(JSON.parse(r.dataset.note || '""')).entries;
-      r.dataset.note = JSON.stringify(joinNoteLog(ch.note, _prevEntries));
+      r.dataset.note = JSON.stringify(ch.note);
     }
     r.classList.add('edited');
   });
@@ -872,58 +854,6 @@ function mdDatedEntry(id){
   const pos = header.length;        // Cursor in der Zeile direkt unter dem Header
   t.focus(); t.setSelectionRange(pos, pos);
   noteSync(id);
-}
-function localTs(){
-  const d = new Date();
-  return d.toLocaleDateString('sv') + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-}
-function splitNoteLog(note){
-  const free = [], entries = [];
-  (note || '').split('\n').forEach(line => {
-    const m = line.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\] (.*)$/);
-    if (m) entries.push({ ts: m[1], text: m[2] });
-    else free.push(line);
-  });
-  return { free: free.join('\n'), entries };
-}
-function joinNoteLog(free, entries){
-  const logLines = entries.map(e => '[' + e.ts + '] ' + e.text);
-  return [free, ...logLines].filter(s => s !== '').join('\n');
-}
-function fmtTsDe(ts){
-  const [date, time] = ts.split(' ');
-  const [y, m, dd] = date.split('-');
-  return dd + '.' + m + '.' + y + ' ' + time;
-}
-function logItemEl(ts, text){
-  const el = document.createElement('div');
-  el.className = 'ed-logitem';
-  el.textContent = fmtTsDe(ts) + '  ' + text;
-  return el;
-}
-async function addLog(){
-  if (!editRow) return;
-  if (editRow.wiki === '1') return;   // Wiki-Items koennen serverseitig keinen Verlauf speichern
-  const inp = document.getElementById('ed-logadd');
-  const text = inp.value.trim();
-  if (!text) return;
-  const ts = localTs();
-  const op = { notebook: editRow.notebook, area: editRow.area, id: editRow.id, ts, text };
-  document.getElementById('ed-log').appendChild(logItemEl(ts, text));   // optimistisch unten
-  // data-note der Karte(n) optimistisch nachziehen, damit Re-open vor Server-Refresh den Eintrag zeigt
-  document.querySelectorAll('#content [data-id]').forEach(el => {
-    if (el.dataset.area === editRow.area && el.dataset.id === editRow.id) {
-      const _s = splitNoteLog(JSON.parse(el.dataset.note || '""'));
-      _s.entries.push({ ts, text });
-      el.dataset.note = JSON.stringify(joinNoteLog(_s.free, _s.entries));
-    }
-  });
-  inp.value = ''; inp.focus();
-  await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), logs:[op] });
-}
-function flushLogDraft(){
-  const inp = document.getElementById('ed-logadd');
-  if (inp && inp.value.trim()) addLog();
 }
 async function addSubtask(){
   if (!editRow) return;
@@ -989,7 +919,6 @@ async function sendOrQueue(sub){
 }
 window.addEventListener('online', flushQueue);
 async function submitChanges(){
-  flushLogDraft();
   stageEdit();
   const done=[], edits=[];
   document.querySelectorAll('#content .chk:checked').forEach(c => {
