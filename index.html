@@ -64,6 +64,9 @@
   .mdprev-lab { font-size:11px; color:#7aa2a9; margin:10px 0 4px; }
   div.mdprev { margin:0; min-height:40px; }
   .mdprev-empty { color:#6b7280; }
+  div.mdfield { min-height:100px; padding:8px 10px; border:1px solid #232733; border-radius:8px; background:#0d1016; line-height:1.4; overflow:auto; }
+  div.mdfield ul { margin:4px 0; padding-left:20px; }
+  div.mdfield h1, div.mdfield h2, div.mdfield h3 { margin:6px 0 2px; }
   .wb-termin { display:flex; gap:6px; margin-bottom:8px; }
   .wb-title { flex:1; min-width:0; padding:9px 10px; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#e5e7eb; font-size:14px; box-sizing:border-box; }
   .wb-termin button { padding:9px 14px; border:1px solid #232733; border-radius:8px; background:#0f1117; color:#9aa4b2; cursor:pointer; white-space:nowrap; }
@@ -182,7 +185,7 @@
     <label class="ed-lab"><input id="ed-frau" type="checkbox" style="width:auto"> Frau</label>
     <label class="ed-lab"><input id="ed-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
-    <div class="mdbar"><button type="button" onclick="mdLinePrefix('ed-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('ed-note','**','**')">Fett</button><button type="button" onclick="mdWrap('ed-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('ed-note','# ', true)"># Titel</button><button type="button" onclick="mdDatedEntry('ed-note')">+ Eintrag</button></div><textarea id="ed-note" class="mdfield" oninput="noteSync('ed-note')"></textarea><div class="mdprev-lab">Vorschau</div><div id="ed-preview" class="note mdprev"></div>
+    <div class="mdbar"><button type="button" onclick="ceList('ed-note')">&#8226; Liste</button><button type="button" onclick="ceBold('ed-note')">Fett</button><button type="button" onclick="ceItalic('ed-note')">Kursiv</button><button type="button" onclick="ceHeading('ed-note')"># Titel</button><button type="button" onclick="ceDatedEntry('ed-note')">+ Eintrag</button></div><div id="ed-note" class="mdfield" contenteditable="true" onpaste="cePaste(event)"></div><textarea id="ed-note-fb" class="mdfield mdfield-fb" style="display:none" oninput="autoGrow(this)"></textarea>
     <div id="ed-subwrap"><label class="ed-lab">Unteraufgaben</label>
       <div id="ed-subs"></div>
       <div class="ed-row"><input id="ed-subadd" type="text" placeholder="Neue Unteraufgabe&#8230;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtask();}"><button onclick="addSubtask()">+</button></div>
@@ -216,14 +219,14 @@
     <label class="ed-lab"><input id="nw-frau" type="checkbox" style="width:auto"> Frau</label>
     <label class="ed-lab"><input id="nw-sixt" type="checkbox" style="width:auto"> Chef</label>
     <label class="ed-lab">Notiz</label>
-    <div class="mdbar"><button type="button" onclick="mdLinePrefix('nw-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('nw-note','**','**')">Fett</button><button type="button" onclick="mdWrap('nw-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('nw-note','# ', true)"># Titel</button><button type="button" onclick="mdDatedEntry('nw-note')">+ Eintrag</button></div><textarea id="nw-note" class="mdfield" oninput="noteSync('nw-note')"></textarea><div class="mdprev-lab">Vorschau</div><div id="nw-preview" class="note mdprev"></div>
+    <div class="mdbar"><button type="button" onclick="ceList('nw-note')">&#8226; Liste</button><button type="button" onclick="ceBold('nw-note')">Fett</button><button type="button" onclick="ceItalic('nw-note')">Kursiv</button><button type="button" onclick="ceHeading('nw-note')"># Titel</button><button type="button" onclick="ceDatedEntry('nw-note')">+ Eintrag</button></div><div id="nw-note" class="mdfield" contenteditable="true" onpaste="cePaste(event)"></div><textarea id="nw-note-fb" class="mdfield mdfield-fb" style="display:none" oninput="autoGrow(this)"></textarea>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeNew()">Abbrechen</button><button class="ed-ok" onclick="saveNew()">Anlegen</button></div>
   </div>
 </div>
 <div id="notedlg">
   <div class="ed-box ed-box-note">
     <h3>Notiz</h3>
-    <div class="mdbar"><button type="button" onclick="mdLinePrefix('nt-note','- ')">&#8226; Liste</button><button type="button" onclick="mdWrap('nt-note','**','**')">Fett</button><button type="button" onclick="mdWrap('nt-note','*','*')">Kursiv</button><button type="button" onclick="mdLinePrefix('nt-note','# ', true)"># Titel</button><button type="button" onclick="mdDatedEntry('nt-note')">+ Eintrag</button></div><textarea id="nt-note" class="mdfield" oninput="noteSync('nt-note')" placeholder="Notiz (Markdown m&#246;glich: - Liste, **fett**, # Titel)"></textarea><div class="mdprev-lab">Vorschau</div><div id="nt-preview" class="note mdprev"></div>
+    <div class="mdbar"><button type="button" onclick="ceList('nt-note')">&#8226; Liste</button><button type="button" onclick="ceBold('nt-note')">Fett</button><button type="button" onclick="ceItalic('nt-note')">Kursiv</button><button type="button" onclick="ceHeading('nt-note')"># Titel</button><button type="button" onclick="ceDatedEntry('nt-note')">+ Eintrag</button></div><div id="nt-note" class="mdfield" contenteditable="true" onpaste="cePaste(event)"></div><textarea id="nt-note-fb" class="mdfield mdfield-fb" style="display:none" oninput="autoGrow(this)"></textarea>
     <div class="ed-actions"><button class="ed-cancel" onclick="closeNote()">Abbrechen</button><button class="ed-ok" onclick="saveNote()">Speichern</button></div>
   </div>
 </div>
@@ -234,7 +237,7 @@
 let PIN = null;
 let INBOX = null;
 const ICON_EYE = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg>'; const ICON_EYE_SLASH = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></svg>';
-const SHELL_VERSION = "7649586fa97f";
+const SHELL_VERSION = "82f2dad94b98";
 async function checkShellUpdate(){
   try {
     const r = await fetch('index.html', { cache: 'no-store' });
@@ -483,7 +486,7 @@ function wbToTodo(){
   openNew();
   _wbConv = block;
   document.getElementById('nw-text').value = textLine;
-  if (note) { document.getElementById('nw-note').value = note; noteSync('nw-note'); }
+  if (note) { noteSet('nw-note', note); }
 }
 function wbApplyRemoval(){
   if (!_wbConv) return;
@@ -620,21 +623,21 @@ window.addEventListener('touchend', () => {
   pullStartY = null; pullDist = 0;
   if (trigger) refresh();
 }, { passive: true });
-const EDITS = {};        // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?,familie?,frau?}
+const EDITS = {};          // key "area\u0000id" -> {area,id, text?,prio?,due?,sixt?,familie?,frau?}
+window.EDITS = EDITS;      // Testzugriff + Debugging (const ist nicht automatisch am window)
 let editRow = null;
 function openEdit(el, focusLog=true){
   if (isWide()) stageEdit();   // Auto-merken: vorigen Eintrag sichern, bevor gewechselt wird
   const d = el.closest('[data-id]').dataset;
   editRow = { area:d.area, id:d.id, notebook:d.notebook, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
   document.getElementById('ed-text').value = d.text;
-  document.getElementById('ed-note').value = editRow.note;
+  noteSet('ed-note', editRow.note);
   document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
   document.getElementById('ed-due').value = d.due || '';
   document.getElementById('ed-sixt').checked = d.sixt === '1';
   document.getElementById('ed-familie').checked = d.familie === '1';
   document.getElementById('ed-frau').checked = d.frau === '1';
   fillDatalist('dl-texts', allTexts());
-  noteSync('ed-note');
   document.getElementById('ed-subs').innerHTML = '';
   // Unteraufgaben nur fuer normale Top-Level-ToDos anbieten, nicht fuer Unteraufgaben selbst
   // (' › ' U+203A, synchron zu render.py _sub_row).
@@ -714,12 +717,11 @@ function openNew(){
   document.getElementById('nw-sixt').checked = false;
   document.getElementById('nw-familie').checked = false;
   document.getElementById('nw-frau').checked = false;
-  document.getElementById('nw-note').value = '';
+  noteSet('nw-note', '');
   document.querySelectorAll('#nw-prio .pbtn').forEach(x => x.classList.toggle('sel', x.dataset.v === ''));
   fillAreas();
   fillDatalist('dl-texts', allTexts());
   fillDatalist('dl-areas', knownAreas('Arbeit').concat(knownAreas('Privat')));
-  noteSync('nw-note');
   if (wide) document.body.classList.add('newmode');
   else document.getElementById('newdlg').style.display = 'flex';
 }
@@ -759,6 +761,133 @@ function mdPreview(src){
   closeList();
   return html;
 }
+function mdToEditable(md){
+  const lines = (md || '').split('\n');
+  let html = '', inList = false;
+  const closeList = () => { if (inList){ html += '</ul>'; inList = false; } };
+  for (const raw of lines){
+    const line = mdEsc(raw);
+    let m;
+    if ((m = line.match(/^(#{1,3})\s+(.*)$/))){
+      closeList(); const n = m[1].length;
+      html += '<h' + n + '>' + mdInline(m[2]) + '</h' + n + '>';
+    } else if ((m = line.match(/^[-*]\s+(.*)$/))){
+      if (!inList){ html += '<ul>'; inList = true; }
+      html += '<li>' + mdInline(m[1]) + '</li>';
+    } else if (line.trim() === ''){
+      closeList(); html += '<p><br></p>';
+    } else {
+      closeList(); html += '<p>' + mdInline(line) + '</p>';
+    }
+  }
+  closeList();
+  return html || '<p><br></p>';
+}
+function ceInline(node){
+  let md = '';
+  node.childNodes.forEach(n => {
+    if (n.nodeType === 3){ md += n.nodeValue; return; }
+    if (n.nodeType !== 1) return;
+    const tag = n.nodeName.toLowerCase();
+    if (tag === 'br'){ md += '\n'; return; }
+    const inner = ceInline(n);
+    const st = (n.getAttribute && n.getAttribute('style')) || '';
+    if (tag === 'strong' || tag === 'b' || /font-weight:\s*(bold|[6-9]00)/.test(st)) md += '**' + inner + '**';
+    else if (tag === 'em' || tag === 'i' || /font-style:\s*italic/.test(st)) md += '*' + inner + '*';
+    else if (tag === 'code') md += '`' + inner + '`';
+    else md += inner;
+  });
+  return md;
+}
+function _isBlockTag(t){ return /^(div|p|ul|ol|h[1-6]|li)$/.test(t); }
+function editableToMd(root){
+  const blocks = [];
+  let cur = null;                       // offene Inline-Zeile
+  const open = () => { if (cur === null) cur = ''; };
+  const flush = () => { if (cur !== null){ blocks.push(cur); cur = null; } };
+  function walk(parent){
+    parent.childNodes.forEach(node => {
+      if (node.nodeType === 3){ open(); cur += node.nodeValue; return; }
+      if (node.nodeType !== 1) return;
+      const tag = node.nodeName.toLowerCase();
+      if (tag === 'br'){ open(); flush(); open(); return; }
+      if (!_isBlockTag(tag)){ open(); cur += ceInline(node); return; }
+      flush();
+      if (tag === 'ul' || tag === 'ol'){
+        node.querySelectorAll(':scope > li').forEach(li => blocks.push('- ' + ceInline(li).trim()));
+      } else if (/^h[1-6]$/.test(tag)){
+        const n = Math.min(3, parseInt(tag[1], 10));
+        blocks.push('#'.repeat(n) + ' ' + ceInline(node).trim());
+      } else {
+        const hasBlockChild = [...node.childNodes].some(c => c.nodeType === 1 && _isBlockTag(c.nodeName.toLowerCase()));
+        if (hasBlockChild) walk(node);
+        else blocks.push(ceInline(node).replace(/\n+$/, ''));
+      }
+    });
+  }
+  walk(root);
+  flush();
+  while (blocks.length && blocks[blocks.length - 1].trim() === '') blocks.pop();
+  return blocks.join('\n');
+}
+function isWysiwygSafe(md){
+  return !/(^|\n)\s*\|.*\|/.test(md || '');
+}
+function _noteFields(id){
+  return { ce: document.getElementById(id), fb: document.getElementById(id + '-fb') };
+}
+function noteSet(id, md){
+  const { ce, fb } = _noteFields(id);
+  if (!ce) return;
+  if (fb && !isWysiwygSafe(md)){
+    fb.value = md || '';
+    fb.style.display = ''; ce.style.display = 'none';
+    autoGrow(fb);
+    return;
+  }
+  if (fb){ fb.style.display = 'none'; }
+  ce.style.display = '';
+  ce.innerHTML = mdToEditable(md);
+}
+function noteGet(id){
+  const { ce, fb } = _noteFields(id);
+  if (fb && fb.style.display !== 'none') return fb.value;
+  if (!ce) return '';
+  return editableToMd(ce);
+}
+function ceFocus(id){ const el = document.getElementById(id); if (el) el.focus(); return el; }
+function ceCmd(id, cmd, val){ ceFocus(id); try { document.execCommand(cmd, false, val); } catch(e){} }
+function ceBold(id){ ceCmd(id, 'bold'); }
+function ceItalic(id){ ceCmd(id, 'italic'); }
+function ceList(id){ ceCmd(id, 'insertUnorderedList'); }
+function ceHeading(id){
+  ceFocus(id);
+  const sel = document.getSelection();
+  const blk = sel && sel.anchorNode && sel.anchorNode.parentElement
+    ? sel.anchorNode.parentElement.closest('h1,h2,h3') : null;
+  ceCmd(id, 'formatBlock', blk ? '<p>' : '<h2>');
+}
+function ceDatedEntry(id){
+  const { ce, fb } = _noteFields(id);
+  if (!ce) return;
+  if (fb && fb.style.display !== 'none'){
+    const header = '**' + localStampDe() + '**\n';
+    fb.value = header + (fb.value ? '\n\n' + fb.value : '');
+    autoGrow(fb); fb.focus();
+    return;
+  }
+  const old = editableToMd(ce);
+  const md = '**' + localStampDe() + '**' + (old ? '\n\n' + old : '');
+  ce.innerHTML = mdToEditable(md);
+  ce.focus();
+}
+function cePaste(ev){
+  ev.preventDefault();
+  const cd = ev.clipboardData || (window.clipboardData);
+  const text = cd ? cd.getData('text/plain') : '';
+  try { document.execCommand('insertText', false, text); }
+  catch(e){ /* aeltere Engines: ignoriere */ }
+}
 function autoGrow(el){ if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 function noteSync(id){
   const t = document.getElementById(id);
@@ -795,14 +924,13 @@ let noteRow = null;
 function openNote(el){
   const d = el.closest('[data-id]').dataset;
   noteRow = { notebook:d.notebook, area:d.area, id:d.id };
-  document.getElementById('nt-note').value = JSON.parse(d.note || '""');
+  noteSet('nt-note', JSON.parse(d.note || '""'));
   document.getElementById('notedlg').style.display = 'flex';
-  noteSync('nt-note');
 }
 function closeNote(){ document.getElementById('notedlg').style.display = 'none'; noteRow = null; }
 async function saveNote(){
   const d = noteRow;
-  const op = { notebook:d.notebook, area:d.area, id:d.id, note:document.getElementById('nt-note').value };
+  const op = { notebook:d.notebook, area:d.area, id:d.id, note: noteGet('nt-note') };
   closeNote();
   const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), edits:[op] });
   toast(ok ? 'Notiz gesendet' : 'offline \u2013 gespeichert');
@@ -826,7 +954,7 @@ async function saveNew(){
   if (document.getElementById('nw-sixt').checked) add.sixt = '1';
   if (document.getElementById('nw-familie').checked) add.familie = '1';
   if (document.getElementById('nw-frau').checked) add.frau = '1';
-  const nnote = document.getElementById('nw-note').value.trim();
+  const nnote = noteGet('nw-note').trim();
   if (nnote) add.note = nnote;
   const ok = await sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), adds:[add], sections });
   wbApplyRemoval();   // Quellzeile(n) entfernen, falls von wbToTodo gestartet (sonst no-op)
@@ -913,7 +1041,7 @@ function stageEdit(){
   const newSixt = document.getElementById('ed-sixt').checked ? '1' : '0';
   const newFamilie = document.getElementById('ed-familie').checked ? '1' : '0';
   const newFrau = document.getElementById('ed-frau').checked ? '1' : '0';
-  const newNote = document.getElementById('ed-note').value;
+  const newNote = noteGet('ed-note');
   const ch = { area:d.area, id:d.id, notebook:d.notebook };
   if (newText && newText !== d.text) ch.text = newText;
   if (newPrio !== d.prio) ch.prio = newPrio;
