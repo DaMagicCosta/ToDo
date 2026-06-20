@@ -124,7 +124,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "802a8afbc7d6";
+const SHARE_VERSION = "ba1e8862b84e";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
@@ -337,7 +337,7 @@ async function saveNew(){
 async function submitChanges(){
   const done = [], reopen = [], edits = [];
   document.querySelectorAll('#content .chk').forEach(c => {
-    const el = c.closest('[data-id]'); if (!el) return;
+    const el = c.closest('[data-id]'); if (!el || el.classList.contains('pending')) return;
     const d = el.dataset;
     const wasDone = d.done === '1';
     if (c.checked && !wasDone) done.push({ notebook:d.notebook, area:d.area, id:d.id });
