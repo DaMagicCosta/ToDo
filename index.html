@@ -134,32 +134,22 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
   #printhead { display:none; }
   #printfoot { display:none; }
   .themebtn { background:transparent; border:0; color:var(--text-muted); cursor:pointer; font-size:18px; padding:4px 8px; line-height:1; }
-  @media (min-width:900px){
-    /* Editor-Dock nur im Bearbeitungsmodus (body.editing, gesetzt durch Klick auf ein
-       ToDo) -- sonst nutzt die Liste die volle Breite. Schliessen: Abbrechen/Speichern/Esc. */
-    body.unlocked.editing #app, body.unlocked.newmode #app { margin-right:42%; }
-    body.unlocked.editing .toolbar, body.unlocked.newmode .toolbar { right:42%; }
-    body.unlocked.editing:not(.newmode) #editor { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:var(--bg); border-left:1px solid var(--border); padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
+  @media screen and (min-width:900px){
+    /* Bearbeiten ist am PC eine eigene VOLLBREITEN-Ansicht auf Tab-Ebene (Klick auf
+       ein ToDo -> body.editing + "Bearbeiten"-Tab-Chip): die Panes (Fokus/Struktur/...)
+       werden ausgeblendet, der Editor erscheint unter der Tab-Zeile. So bekommen
+       Liste UND Bearbeitung die volle Breite statt sich 58/42 zu teilen.
+       Schliessen: Abbrechen/Speichern/Esc oder Tab-Wechsel (merkt automatisch). */
+    body.unlocked.editing #content .pane { display:none !important; }
+    body.unlocked.editing:not(.newmode) #editor { display:block !important; position:static; width:auto; background:transparent; border:0; padding:4px 16px 90px; align-items:initial; justify-content:initial; }
+    body.unlocked.editing:not(.newmode) #editor .ed-box { max-width:820px; margin:0 auto; }
+    /* Bearbeiten-Chip sieht aus wie der aktive Tab; echte Tabs treten zurueck */
+    body.unlocked.newmode #app { margin-right:42%; }
+    body.unlocked.newmode .toolbar { right:42%; }
     body.unlocked.newmode #newdlg { display:block !important; position:fixed; inset:0 0 0 auto; width:42%; background:var(--bg); border-left:1px solid var(--border); padding:20px 22px 80px; overflow:auto; align-items:initial; justify-content:initial; }
     body.unlocked.newmode #newdlg .ed-box { max-width:none; border:0; background:transparent; padding:0; }
     #editor .ed-box { max-width:none; border:0; background:transparent; padding:0; }
     #content [data-id].selected { outline:2px solid var(--accent); outline-offset:-2px; border-radius:8px; }
-    /* Whiteboard-Tab: kein ToDo-Editor-Dock -> volle Breite */
-    body.wbfull.unlocked:not(.newmode) #app { margin-right:0; }
-    body.wbfull.unlocked:not(.newmode) .toolbar { right:0; }
-    body.wbfull.unlocked:not(.newmode) #editor { display:none !important; }
-  }
-  @media screen and (min-width:900px){
-    /* Auswahl-Kopplung: Notiz/Unteraufgaben der GEWAEHLTEN Karte links ausblenden --
-       sie stehen rechts im Editor (Notiz-WYSIWYG + Sub-Liste). Beides gleichzeitig
-       zeigt nur dieselben Inhalte doppelt und die Augen springen hin und her.
-       Nur screen: der Druck zeigt weiterhin alles. :has() -> rein reaktiv,
-       Abwaehlen/Umwaehlen stellt automatisch wieder her. */
-    body.unlocked .parent:has(> .item.selected) > .note,
-    body.unlocked .parent:has(> .item.selected) > .subs,
-    body.unlocked .focusparent:has(> .focuscard.selected) > .fnote,
-    body.unlocked .focusparent:has(> .focuscard.selected) > .fsubs,
-    body.unlocked .item.sub.selected + .note { display:none; }
   }
   @page { margin: 14mm 12mm 16mm 12mm; }
   @media print {
@@ -327,7 +317,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 let PIN = null;
 let INBOX = null;
 const ICON_EYE = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg>'; const ICON_EYE_SLASH = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></svg>';
-const SHELL_VERSION = "e70c11ef055b";
+const SHELL_VERSION = "f444065c2f0f";
 async function checkShellUpdate(){
   try {
     const r = await fetch('index.html', { cache: 'no-store' });
@@ -954,8 +944,23 @@ function openEdit(el, focusLog=true){
   document.getElementById('ed-subwrap').style.display = isTop ? '' : 'none';
   if (isTop) fillEditorSubs();
   document.getElementById('ed-group-row').style.display = (editRow.id.indexOf(' › ') === -1) ? '' : 'none';
-  if (isWide()){ document.body.classList.add('editing'); markSelected(el); }
+  if (isWide()){ document.body.classList.add('editing'); markSelected(el); showEditTab(); }
   else document.getElementById('editor').style.display = 'flex';
+}
+function showEditTab(){
+  // "Bearbeiten" reiht sich als aktiver Tab-Chip neben Fokus/Struktur/... ein;
+  // die echten Tabs treten optisch zurueck (der aktive PANE behaelt seine Klasse,
+  // closeEditor aktiviert seinen Tab wieder).
+  const tabs = document.querySelector('#content .tabs');
+  if (!tabs) return;
+  let chip = document.getElementById('edittab');
+  if (!chip){
+    chip = document.createElement('button');
+    chip.id = 'edittab'; chip.className = 'tab';
+    chip.textContent = 'Bearbeiten';
+    tabs.appendChild(chip);
+  }
+  tabs.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === chip));
 }
 function pickPrio(b){ document.querySelectorAll('#ed-prio .pbtn').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); }
 let nwNotebook = 'Arbeit';
@@ -1322,10 +1327,18 @@ async function delSection(el){
 }
 function clearDue(){ document.getElementById('ed-due').value = ''; document.getElementById('ed-time').value = ''; }
 function closeEditor(){
-  // Handy: Modal zu. PC: Bearbeitungsmodus verlassen -> Dock weg, Liste volle Breite.
+  // Handy: Modal zu. PC: Bearbeitungs-Ansicht verlassen -> Chip weg, vorige Ansicht
+  // (deren Pane blieb .active) bekommt ihren Tab zurueck, Liste volle Breite.
   document.getElementById('editor').style.display = 'none';
   document.body.classList.remove('editing');
   document.querySelectorAll('#content [data-id].selected').forEach(x => x.classList.remove('selected'));
+  const chip = document.getElementById('edittab');
+  if (chip) chip.remove();
+  const pane = document.querySelector('#content .pane.active');
+  if (pane){
+    const tb = document.querySelector('.tab[data-pane="' + pane.id + '"]');
+    if (tb) tb.classList.add('active');
+  }
   editRow = null;
 }
 document.addEventListener('keydown', e => {
