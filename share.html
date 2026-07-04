@@ -124,7 +124,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "62bcbfd0c908";
+const SHARE_VERSION = "4e0e5f141ba1";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
@@ -164,18 +164,22 @@ function shBody(lines){
 }
 function shNoteHtml(md){
   if (!md) return '';
-  let h = '';
-  md.split(/\n[ \t]*\n/).forEach(b => {
-    if (!b.trim()) return;
-    const lines = b.split('\n');
-    const head = shHead(lines[0]);
-    const hasBody = lines.slice(1).some(l => l.trim());
-    if (head !== null && hasBody){
-      h += '<div class="lentry"><div class="lts">' + esc(head) + '</div><div class="lbody">' + shBody(lines.slice(1)) + '</div></div>';
-    } else {
-      h += shBody(lines);
-    }
-  });
+  const lines = md.split('\n');
+  let h = '', plain = [];
+  const flushPlain = () => { if (plain.some(l => l.trim())) h += shBody(plain); plain = []; };
+  let i = 0;
+  while (i < lines.length){
+    const raw = lines[i];
+    const eh = shEntryHead(raw);
+    if (eh === null){ plain.push(raw); i++; continue; }
+    const body = eh[1] ? [eh[1]] : [];
+    i++;
+    while (i < lines.length && lines[i].trim() && shEntryHead(lines[i]) === null){ body.push(lines[i]); i++; }
+    if (!body.some(l => l.trim())){ plain.push(raw); continue; }   // Kopf ohne Body -> normaler Text
+    flushPlain();
+    h += '<div class="lentry"><div class="lts">' + esc(eh[0]) + '</div><div class="lbody">' + shBody(body) + '</div></div>';
+  }
+  flushPlain();
   return h;
 }
 function toast(msg){ const e=document.getElementById('toast'); e.textContent=msg; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1700); }
