@@ -124,7 +124,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "ba1e8862b84e";
+const SHARE_VERSION = "62bcbfd0c908";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
@@ -137,7 +137,19 @@ const EDITS = {};            // key area id -> {notebook,area,id,text,prio,due,n
 let editRow = null;
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function shInline(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>'); }
-function shHead(line){ const m = line.trim().match(/^\*\*(.+)\*\*$/); return (m && m[1].indexOf('**') < 0) ? m[1].trim() : null; }
+// Eintrags-Kopf-Erkennung — deckungsgleich mit note_md._entry_head (Python):
+// (a) Zeile genau **Kopf**; (b) **Kopf** + Rest, Kopf beginnt mit Datum TT.MM.;
+// (c) Stand-Zeile "(✅ )Stand TT.MM.…: Rest". Rueckgabe [kopf, bodyStart|null] oder null.
+function shEntryHead(line){
+  const s = line.trim();
+  let m = s.match(/^\*\*(.+)\*\*$/);
+  if (m && m[1].indexOf('**') < 0) return [m[1].trim(), null];
+  m = s.match(/^\*\*(\d{1,2}\.\d{1,2}\.[^*]*)\*\*\s*(\S.*)$/);
+  if (m && m[1].indexOf('**') < 0) return [m[1].trim(), m[2].trim()];
+  m = s.match(/^((?:\u2705|\u2714)\s*)?(Stand\s+\d{1,2}\.\d{1,2}\.(?:\d{2,4})?[^:]{0,60}):\s*(\S.*)$/);
+  if (m) return [((m[1] || '') + m[2]).trim(), m[3].trim()];
+  return null;
+}
 function shBody(lines){
   let h = '', inList = false, buf = [];
   const flush = () => { if (buf.length){ h += '<p>' + buf.join('<br>') + '</p>'; buf = []; } };
