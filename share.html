@@ -124,7 +124,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "4e0e5f141ba1";
+const SHARE_VERSION = "347038cd8657";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
@@ -147,7 +147,7 @@ function shEntryHead(line){
   m = s.match(/^\*\*(\d{1,2}\.\d{1,2}\.[^*]*)\*\*\s*(\S.*)$/);
   if (m && m[1].indexOf('**') < 0) return [m[1].trim(), m[2].trim()];
   m = s.match(/^((?:\u2705|\u2714)\s*)?(Stand\s+\d{1,2}\.\d{1,2}\.(?:\d{2,4})?[^:]{0,60}):\s*(\S.*)$/);
-  if (m) return [((m[1] || '') + m[2]).trim(), m[3].trim()];
+  if (m) return [m[2].trim(), m[3].trim()];   // Haken-Emoji bleibt in der Anzeige weg
   return null;
 }
 function shBody(lines){
