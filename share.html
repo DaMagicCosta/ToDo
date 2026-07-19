@@ -16,7 +16,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
     --border:#232733; --border-subtle:#2d333f;
     --text:#e6e9ef; --text-muted:#9aa4b2; --text-dim:#a3acba; --text-dim2:#8b93a1;
     --text-subtle:#7aa2a9; --text-soft:#cdd3df;
-    --accent:#2dd4bf; --accent-ink:#06231f; --link:#7dd3fc;
+    --accent:#2dd4bf; --accent-ink:#06231f; --link:#7dd3fc; --xref:#4fa8a0;
     --danger:#f87171; --done:#4ade80;
     --prio-hi-bg:#3b1d1d; --prio-mid:#fbbf24; --prio-mid-bg:#3a2f17;
     --prio-lo:#5eead4; --prio-lo-bg:#1d2c2b; --overdue-bg:#251417; --sixt-bg:#1c1a12;
@@ -29,7 +29,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
     --border:#e2e5ea; --border-subtle:#d7dbe1;
     --text:#1b1f27; --text-muted:#4b5563; --text-dim:#5b6472; --text-dim2:#6b7280;
     --text-subtle:#4b7a82; --text-soft:#3a4150;
-    --accent:#0d9488; --accent-ink:#ffffff; --link:#0369a1;
+    --accent:#0d9488; --accent-ink:#ffffff; --link:#0369a1; --xref:#1d7a72;
     --danger:#dc2626; --done:#16a34a;
     --prio-hi-bg:#fde8e8; --prio-mid:#b45309; --prio-mid-bg:#fdf0dd;
     --prio-lo:#0d9488; --prio-lo-bg:#d9f2ee; --overdue-bg:#fdecec; --sixt-bg:#fdf6e3;
@@ -125,7 +125,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "8dd054911408";
+const SHARE_VERSION = "2930a24e2914";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
