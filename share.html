@@ -57,7 +57,6 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
   .note { font-size:13px; color:var(--text-soft); margin-top:6px; padding-left:27px; }
   .note p { margin:.25em 0; } .note ul { margin:.25em 0; padding-left:18px; }
   .note code { font-family:inherit; font-size:inherit; background:transparent; border:0; padding:0; }
-  #content .note .xref { text-decoration:underline dotted var(--xref); text-underline-offset:2px; cursor:pointer; }
   .lentry { margin:.3em 0; } .lts { font-weight:700; color:var(--accent); } .lbody { padding-left:14px; }
   .subs { margin:6px 0 0 27px; }
   .sub { display:flex; align-items:center; gap:8px; font-size:14px; padding:2px 0; }
@@ -126,7 +125,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "00431edeb302";
+const SHARE_VERSION = "2930a24e2914";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
