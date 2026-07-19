@@ -87,6 +87,8 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
   .ed-row button { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-muted); }
   .ed-actions { display:flex; gap:8px; margin-top:14px; }
   .ed-actions button { flex:1; padding:11px; border:0; border-radius:8px; font-weight:600; }
+  .ed-actions .ed-del { flex:0 0 auto; padding:11px 14px; background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .ed-actions .ed-del:active { background:var(--danger); color:#fff; }
   .ed-cancel { background:var(--surface-elevated); color:var(--text); }
   .ed-ok { background:var(--accent); color:var(--accent-ink); }
   .ed-box-note { max-height:88vh; overflow:auto; }
@@ -126,6 +128,9 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
   #ed-subs { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
   .ed-subitem { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-soft); padding:3px 9px; background:var(--bg); border:1px solid var(--border); border-radius:7px; }
   .ed-subitem .txt.done { text-decoration:line-through; color:var(--text-muted); }
+  .ed-subitem .txt { flex:1; }
+  .ed-subdel { flex:0 0 auto; border:0; background:transparent; color:var(--danger); font-size:16px; line-height:1; padding:0 4px; cursor:pointer; opacity:.75; }
+  .ed-subdel:active { opacity:1; }
   #ed-subadd { flex:1; }
   #fab { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:46px; height:46px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-size:26px; font-weight:700; line-height:1; padding:0; display:flex; align-items:center; justify-content:center; border:3px solid var(--bg); box-shadow:0 2px 10px var(--shadow); cursor:pointer; z-index:2; transition:filter .08s; }
   #fab:active { filter:brightness(0.9); }
@@ -333,7 +338,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
       <div id="ed-atts" class="atts"></div>
       <div class="ed-row"><input id="ed-attfile" type="file" accept="image/*,application/pdf" style="display:none" onchange="addAttachment(this)"><button onclick="document.getElementById('ed-attfile').click()">&#128206; Foto/Datei</button></div>
     </div>
-    <div class="ed-actions"><button class="ed-cancel" onclick="zuaRequest()">Zuarbeit</button><button class="ed-cancel" onclick="closeEditor()">Abbrechen</button><button class="ed-ok" onclick="applyEdit()">Speichern</button></div>
+    <div class="ed-actions"><button class="ed-del" onclick="deleteTodo()">L&#246;schen</button><button class="ed-cancel" onclick="zuaRequest()">Zuarbeit</button><button class="ed-cancel" onclick="closeEditor()">Abbrechen</button><button class="ed-ok" onclick="applyEdit()">Speichern</button></div>
   </div>
 </div>
 <div id="newdlg">
@@ -403,7 +408,7 @@ let PIN = null;
 let INBOX = null;
 const ICON_EYE = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg>'; const ICON_EYE_SLASH = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></svg>';
 const ICON_CHECK = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
-const SHELL_VERSION = "3807b11a014f";
+const SHELL_VERSION = "e8e99ac1a487";
 async function checkShellUpdate(){
   try {
     const r = await fetch('index.html', { cache: 'no-store' });
@@ -2343,7 +2348,7 @@ function pendingSummary(){
   // Gemeinsame Zaehlung fuer pcstatus-Banner und Info-Status-Kasten:
   // n = einzelne wartende Aenderungen, stale = aelteste Sendung > 15 Min unbestaetigt.
   const subs = Object.values(loadPending());
-  const n = subs.reduce((a,e)=> { const sub = e.sub; return a + ((e.sub.adds||[]).length + (e.sub.edits||[]).length + (e.sub.done||[]).length + (e.sub.reopen||[]).length + (e.sub.attachments||[]).length + (sub.attdels||[]).length); }, 0);
+  const n = subs.reduce((a,e)=> { const sub = e.sub; return a + ((e.sub.adds||[]).length + (e.sub.edits||[]).length + (e.sub.done||[]).length + (e.sub.reopen||[]).length + (e.sub.attachments||[]).length + (sub.attdels||[]).length + (sub.delete||[]).length); }, 0);
   const oldest = subs.reduce((a,e)=> Math.min(a, e.sentAt || Date.now()), Date.now());
   return { count: subs.length, n: n, stale: subs.length > 0 && (Date.now() - oldest > 900000) };
 }
@@ -2390,6 +2395,7 @@ function applyPending(){
     (sub.edits || []).forEach(op => { markPending(op.area, op.id); reflectEdit({ area:op.area, id:op.id, text:op.id, notebook:op.notebook }, op); });
     (sub.done || []).forEach(op => markPendingState(op, true));
     (sub.reopen || []).forEach(op => markPendingState(op, false));
+    (sub.delete || []).forEach(op => _delRemoveDom(op.area, op.id));
   }
 }
 function isWide(){ return !!(window.matchMedia && window.matchMedia('(min-width:900px)').matches); }
@@ -2440,6 +2446,36 @@ function stageEdit(){
   const qel = document.getElementById('q'); if (qel && qel.value) listSearch(qel.value);
 }
 function applyEdit(){ stageEdit(); closeEditor(); }
+function _delRemoveDom(area, id){
+  // Optimistisch: passende Zeilen entfernen. Top-Level -> ganze Huelle (.focusparent/.parent)
+  // inkl. Notiz und Unteraufgaben; Unteraufgabe -> nur ihre Zeile (+ direkt folgende Notiz).
+  const isSub = id.indexOf(' \u203a ') !== -1;
+  document.querySelectorAll('#content [data-id]').forEach(el => {
+    if (el.dataset.area !== area || el.dataset.id !== id) return;
+    if (isSub){
+      const nxt = el.nextElementSibling;
+      el.remove();
+      if (nxt && nxt.classList && nxt.classList.contains('note')) nxt.remove();
+    } else {
+      const wrap = el.closest('.focusparent, .parent');
+      (wrap || el).remove();
+    }
+  });
+}
+function deleteTodo(){
+  if (!editRow) return;
+  const id = (editRow.id0 != null ? editRow.id0 : editRow.id);
+  const isSub = id.indexOf(' \u203a ') !== -1;
+  const label = isSub ? id.split(' \u203a ').pop() : id;
+  const frage = isSub ? ('Unteraufgabe l\u00f6schen: \u201e' + label + '\u201c?')
+                      : ('ToDo l\u00f6schen: \u201e' + label + '\u201c?\nInklusive aller Unteraufgaben.');
+  if (!confirm(frage)) return;
+  const op = { notebook: editRow.notebook, area: editRow.area, id: id };
+  sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), delete:[op] });
+  _delRemoveDom(editRow.area, id);
+  closeEditor();
+  toast('zum L\u00f6schen an PC gesendet');
+}
 function syncEditorView(){
   // Nach Re-Render/Tab-Wechsel: Neu-Modus verlassen; eine LAUFENDE Bearbeitung an
   // derselben Karte weiterfuehren (Markierung wiederherstellen) oder schliessen,
@@ -2496,9 +2532,21 @@ function fillEditorSubs(){
       });
       lbl.classList.toggle('done', box.checked);
     };
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'ed-subdel';
+    del.textContent = '\u00d7';
+    del.title = 'Unteraufgabe l\u00f6schen';
+    del.onclick = () => {
+      if (!confirm('Unteraufgabe l\u00f6schen: \u201e' + d.text + '\u201c?')) return;
+      sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(), delete:[{ notebook: d.notebook, area: d.area, id: d.id }] });
+      _delRemoveDom(d.area, d.id);
+      item.remove();
+      toast('zum L\u00f6schen an PC gesendet');
+    };
     const item = document.createElement('div');
     item.className = 'ed-subitem';
-    item.append(box, lbl);
+    item.append(box, lbl, del);
     subsEl.appendChild(item);
   });
 }
@@ -2741,7 +2789,7 @@ function loadPending(){
 function savePending(m){ localStorage.setItem(PENDKEY, JSON.stringify(m)); }
 function rememberPending(sub){
   if (!sub || !sub.id) return;
-  const has = (sub.adds||[]).length || (sub.edits||[]).length || (sub.done||[]).length || (sub.reopen||[]).length || (sub.attachments||[]).length || (sub.attdels||[]).length;
+  const has = (sub.adds||[]).length || (sub.edits||[]).length || (sub.done||[]).length || (sub.reopen||[]).length || (sub.attachments||[]).length || (sub.attdels||[]).length || (sub.delete||[]).length;
   if (!has) return;   // reine Whiteboard-/Sektions-Sync nicht als wartendes ToDo fuehren
   // Anhang-Base64 (mehrere MB) gehoert nicht in localStorage (Quota-Risiko) --
   // niemand liest sub.attachments[].data aus pendingOps zurueck, daher schlank speichern.
