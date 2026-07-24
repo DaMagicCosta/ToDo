@@ -21,6 +21,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
     --prio-hi-bg:#3b1d1d; --prio-mid:#fbbf24; --prio-mid-bg:#3a2f17;
     --prio-lo:#5eead4; --prio-lo-bg:#1d2c2b; --overdue-bg:#251417; --sixt-bg:#1c1a12;
     --search-hi-bg:#3b3a16; --search-hi-text:#fde68a; --toast-bg:#232733; --toast-text:#e6e9ef;
+    --card-radius:14px; --card-shadow:0 1px 3px rgba(0,0,0,.4);
   }
   html[data-theme="light"]{
     color-scheme: light;
@@ -34,6 +35,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
     --prio-hi-bg:#fde8e8; --prio-mid:#b45309; --prio-mid-bg:#fdf0dd;
     --prio-lo:#0d9488; --prio-lo-bg:#d9f2ee; --overdue-bg:#fdecec; --sixt-bg:#fdf6e3;
     --search-hi-bg:#fde68a; --search-hi-text:#713f12; --toast-bg:#2b303b; --toast-text:#f6f7f9;
+    --card-radius:14px; --card-shadow:0 1px 3px rgba(27,31,39,.10);
   }
 
   :root { color-scheme: light dark; }
@@ -125,7 +127,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "2930a24e2914";
+const SHARE_VERSION = "a399c941392d";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
