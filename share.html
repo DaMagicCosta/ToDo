@@ -18,8 +18,8 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
     --text-subtle:#7aa2a9; --text-soft:#cdd3df;
     --accent:#2dd4bf; --accent-ink:#06231f; --link:#7dd3fc; --xref:#4fa8a0;
     --danger:#f87171; --done:#4ade80;
-    --prio-mid:#fbbf24; --prio-mid-bg:#3a2f17;
-    --prio-lo:#5eead4; --sixt-bg:#1c1a12;
+    --prio-hi-bg:#3b1d1d; --prio-mid:#fbbf24; --prio-mid-bg:#3a2f17;
+    --prio-lo:#5eead4; --prio-lo-bg:#1d2c2b; --sixt-bg:#1c1a12;
     --search-hi-bg:#3b3a16; --search-hi-text:#fde68a; --toast-bg:#232733; --toast-text:#e6e9ef;
     --card-radius:14px; --card-shadow:0 1px 3px rgba(0,0,0,.4);
   }
@@ -32,8 +32,8 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
     --text-subtle:#4b7a82; --text-soft:#3a4150;
     --accent:#0d9488; --accent-ink:#ffffff; --link:#0369a1; --xref:#1d7a72;
     --danger:#dc2626; --done:#16a34a;
-    --prio-mid:#b45309; --prio-mid-bg:#fdf0dd;
-    --prio-lo:#0d9488; --sixt-bg:#fdf6e3;
+    --prio-hi-bg:#fde8e8; --prio-mid:#b45309; --prio-mid-bg:#fdf0dd;
+    --prio-lo:#0d9488; --prio-lo-bg:#d9f2ee; --sixt-bg:#fdf6e3;
     --search-hi-bg:#fde68a; --search-hi-text:#713f12; --toast-bg:#2b303b; --toast-text:#f6f7f9;
     --card-radius:14px; --card-shadow:0 1px 3px rgba(27,31,39,.10);
   }
@@ -127,7 +127,7 @@ document.documentElement.dataset.theme=t;}catch(e){document.documentElement.data
 </div>
 <div id="toast"></div>
 <script>
-const SHARE_VERSION = "d029fef591e7";
+const SHARE_VERSION = "43ebeb80ce8a";
 const hash = location.hash.replace(/^#/, '');
 const dot = hash.indexOf('.');
 const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
