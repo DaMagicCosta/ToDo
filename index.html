@@ -501,7 +501,7 @@ let PIN = null;
 let INBOX = null;
 const ICON_EYE = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg>'; const ICON_EYE_SLASH = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></svg>';
 const ICON_CHECK = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
-const SHELL_VERSION = "7565da41932d";
+const SHELL_VERSION = "5554b4223092";
 async function checkShellUpdate(){
   try {
     const r = await fetch('index.html', { cache: 'no-store' });
@@ -2001,7 +2001,7 @@ function openEdit(el, focusLog=true, forceModal=false){
   const d = el.closest('[data-id]').dataset;
   // id0 = unveraenderliche Server-Identitaet (Operationen zielen darauf); id/text folgen
   // der optimistischen Anzeige und wandern beim Umbenennen mit (siehe stageEdit/reflectEdit).
-  editRow = { area:d.area, id:d.id, id0:d.id, notebook:d.notebook, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
+  editRow = { area:d.area, id:d.id, id0:d.id, notebook:d.notebook, text:d.text, prio:d.prio || '', due:d.due || '', sixt:d.sixt, vertraulich:d.vertraulich, familie:d.familie, frau:d.frau, note:JSON.parse(d.note || '""') };
   const parts = titleParts(d.text);
   editRow.topic0 = parts.topic; editRow.desc0 = parts.desc;
   document.getElementById('ed-text').value = parts.desc;
@@ -2011,6 +2011,7 @@ function openEdit(el, focusLog=true, forceModal=false){
   document.querySelectorAll('#ed-prio .pbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === (d.prio || '')));
   document.getElementById('ed-due').value = (d.due || '').slice(0, 10);
   document.getElementById('ed-time').value = (d.due && d.due.indexOf('T') >= 0) ? d.due.slice(11) : '';
+  document.getElementById('ed-vertraulich').checked = d.vertraulich === '1';
   const cr = d.created || '';
   document.getElementById('ed-created').textContent = cr ? 'erfasst am ' + cr.split('-').reverse().join('.') : '';
   fillDatalist('dl-texts', allTexts());
@@ -2941,6 +2942,40 @@ function reflectEdit(d, ch){
       const star = r.querySelector('[data-favstar]');
       if (star) star.classList.toggle('on', ch.sixt === '1');
     }
+    if ('vertraulich' in ch){
+      // Task 5: data-vertraulich + vtr-Klasse muessen wie render.py (_data_attrs/_vtr_cls)
+      // auf ALLE Block-Container wandern, nicht nur auf die [data-id]-Zeile selbst.
+      // render.py haengt .vtr zusaetzlich an die umschliessende Huelle (.focusparent bei
+      // _focus_parent, .parent bei _parent_block) -- aber NUR bei Top-Level-ToDos, eine
+      // Unteraufgabe teilt sich die Huelle mit ihrem (womoeglich nicht vertraulichen)
+      // Eltern-ToDo und darf sie nicht mitreissen. Anhang-/Notiz-Chips haengen als
+      // GESCHWISTER hinter der Zeile (_atts_html/_note_html, siehe _focus_parent/
+      // _parent_block/_sub_row) -- bei Top-Level-ToDos ist die Notiz zusaetzlich in
+      // <details class="fnote"> eingepackt (_focus_note/_parent_block), bei Unteraufgaben
+      // liegt sie roh als direktes Geschwister (_sub_row: row + atts + note). Das
+      // Schloss-Symbol (.vlock) braucht keinen eigenen Toggle: es ist bereits IMMER
+      // gerendert (Task 4) und wird rein ueber CSS (.vtr .vlock{display:inline-block})
+      // sichtbar, sobald sein Container die vtr-Klasse traegt -- hier also automatisch
+      // ueber r selbst.
+      r.dataset.vertraulich = ch.vertraulich;
+      r.classList.toggle('vtr', ch.vertraulich === '1');
+      const isTop = d.id.indexOf(' › ') === -1;
+      if (isTop){
+        const wrap = r.closest('.focusparent') || r.closest('.parent');
+        if (wrap) wrap.classList.toggle('vtr', ch.vertraulich === '1');
+      }
+      let sib = r.nextElementSibling;
+      while (sib){
+        if (sib.classList.contains('atts') || sib.classList.contains('note')){
+          sib.classList.toggle('vtr', ch.vertraulich === '1');
+        } else if (sib.tagName === 'DETAILS' && sib.classList.contains('fnote')){
+          sib.querySelectorAll('.note').forEach(n => n.classList.toggle('vtr', ch.vertraulich === '1'));
+        } else {
+          break;
+        }
+        sib = sib.nextElementSibling;
+      }
+    }
     r.classList.add('edited');
   });
 }
@@ -3121,11 +3156,14 @@ function stageEdit(){
   const edTime = document.getElementById('ed-time').value;
   const newDue = edDate ? (edTime ? edDate + 'T' + edTime : edDate) : '';
   const newNote = noteGet('ed-note');
+  const vertBox = document.getElementById('ed-vertraulich');
+  const newVertraulich = vertBox && vertBox.checked ? '1' : '0';
   const ch = { area:d.area, id:(d.id0 != null ? d.id0 : d.id), notebook:d.notebook };
   if (newText && newText !== d.text) ch.text = newText;
   if (newPrio !== d.prio) ch.prio = newPrio;
   if (newDue !== d.due) ch.due = newDue;
   if (newNote !== d.note) ch.note = newNote;
+  if (newVertraulich !== d.vertraulich) ch.vertraulich = newVertraulich;
   if (Object.keys(ch).length > 3) {
     EDITS[d.area + '\u0000' + ch.id] = ch;   // Schluessel = Server-id (id0): mehrfaches Umbenennen kollabiert zu EINER Op
     reflectEdit(d, ch);
