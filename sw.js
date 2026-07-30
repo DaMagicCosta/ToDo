@@ -1,4 +1,4 @@
-const CACHE = 'todo-shell-9af00893ca1b';
+const CACHE = 'todo-shell-194f4f7e776c';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
