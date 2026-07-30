@@ -487,7 +487,7 @@ let PIN = null;
 let INBOX = null;
 const ICON_EYE = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></svg>'; const ICON_EYE_SLASH = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></svg>';
 const ICON_CHECK = '<svg class="ic" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
-const SHELL_VERSION = "e2753449282c";
+const SHELL_VERSION = "1d6a0c1fe890";
 async function checkShellUpdate(){
   try {
     const r = await fetch('index.html', { cache: 'no-store' });
@@ -897,6 +897,108 @@ function favFilterToggle(){
   localStorage.setItem('favFilter', on ? '1' : '');
   applyFavFilter(on);
   if (typeof favApplyOrder === 'function') favApplyOrder();   // Task 6; vorher no-op
+}
+// Reihenfolge der Favoriten (Task 6): favApplyOrder sortiert die .focusparent-Huellen
+// von #focus rein clientseitig nach FAV_ORDER um -- nur unter dem Favoriten-Filter,
+// sonst bliebe die Dringlichkeits-Automatik unberuehrt. Unbekannte Ids (neue Favoriten,
+// noch nie gezogen) behalten ihre bisherige relative Reihenfolge und landen ans Ende.
+function favApplyOrder(){
+  if (!document.body.classList.contains('f-fav')) return;
+  const focus = document.getElementById('focus');
+  if (!focus || !FAV_ORDER.length) return;
+  const parents = [...focus.querySelectorAll(':scope > .focusparent')];
+  const idOf = p => { const c = p.querySelector('[data-id]'); return c ? c.dataset.id : ''; };
+  const rang = id => { const i = FAV_ORDER.indexOf(id); return i < 0 ? FAV_ORDER.length : i; };
+  parents
+    .map((p, i) => ({ p, r: rang(idOf(p)), i }))
+    .sort((a, b) => (a.r - b.r) || (a.i - b.i))
+    .forEach(x => focus.appendChild(x.p));
+}
+// favCommitOrder liest die sichtbare (bereits durch den Favoriten-Filter reduzierte)
+// Reihenfolge aus, merkt sie in FAV_ORDER und schickt sie an den Server -- Sendungs-Id
+// im selben Muster wie wbSync (Whiteboard-Sync), damit Warteschlange/Reconcile greifen.
+function favCommitOrder(movedId){
+  const focus = document.getElementById('focus');
+  const ids = [...focus.querySelectorAll(':scope > .focusparent:not(.favhide)')]
+    .map(p => { const c = p.querySelector('[data-id]'); return c ? c.dataset.id : ''; })
+    .filter(Boolean);
+  FAV_ORDER = ids;
+  sendOrQueue({ id: Date.now() + '_' + crypto.randomUUID(),
+                favOrder: { ids: ids, ts: Date.now(), moved: movedId || null } });
+  toast('Reihenfolge gemerkt');
+}
+// Ziehen zum Umsortieren (Task 6, Muster: fabDown/fabMove/fabUp): nur aktiv unter dem
+// Favoriten-Filter. 450ms-Lang-Druck hebt die .focusparent-Huelle an (.fav-drag),
+// > 10px Bewegung vor dem Timer bricht ab (Wisch/Scroll), pointermove vergleicht den
+// Mittelpunkt der gezogenen Huelle mit den Geschwistern und tauscht live, pointerup
+// entfernt die Klasse, squelcht den nachfolgenden click und schreibt/sendet via favCommitOrder.
+let favDragTimer = null, favDragging = false, favDragStart = null, favDragEl = null, favSquelch = false;
+function favDown(ev){
+  if (!document.body.classList.contains('f-fav')) return;
+  favSquelch = false;
+  if (ev.button) return;
+  const wrap = ev.target.closest('.focusparent');
+  if (!wrap) return;
+  favDragStart = { x: ev.clientX, y: ev.clientY };
+  favDragging = false;
+  favDragEl = wrap;
+  clearTimeout(favDragTimer);
+  favDragTimer = setTimeout(function(){
+    favDragging = true;
+    favDragEl.classList.add('fav-drag');
+    if (ev.pointerId !== undefined){ try { favDragEl.setPointerCapture(ev.pointerId); } catch(e){} }
+  }, 450);
+}
+function favMove(ev){
+  if (!favDragStart) return;
+  if (!favDragging){
+    if (Math.abs(ev.clientX - favDragStart.x) > 10 || Math.abs(ev.clientY - favDragStart.y) > 10){
+      clearTimeout(favDragTimer); favDragTimer = null; favDragStart = null;
+    }
+    return;
+  }
+  const focus = document.getElementById('focus');
+  if (!focus || !favDragEl) return;
+  const y = ev.clientY;
+  const sibs = [...focus.querySelectorAll(':scope > .focusparent')].filter(p => p !== favDragEl);
+  for (const sib of sibs){
+    const r = sib.getBoundingClientRect();
+    const mid = r.top + r.height / 2;
+    if (y < mid && sib.compareDocumentPosition(favDragEl) & Node.DOCUMENT_POSITION_FOLLOWING){
+      focus.insertBefore(favDragEl, sib);
+      break;
+    }
+    if (y >= mid && sib.compareDocumentPosition(favDragEl) & Node.DOCUMENT_POSITION_PRECEDING){
+      focus.insertBefore(favDragEl, sib.nextSibling);
+      break;
+    }
+  }
+}
+function favUp(ev){
+  clearTimeout(favDragTimer); favDragTimer = null;
+  if (favDragging && favDragEl){
+    const c = favDragEl.querySelector('[data-id]');
+    const movedId = c ? c.dataset.id : null;
+    favDragEl.classList.remove('fav-drag');
+    favSquelch = true;
+    favCommitOrder(movedId);
+  }
+  favDragging = false; favDragStart = null; favDragEl = null;
+}
+function favDragInit(){
+  const focus = document.getElementById('focus');
+  if (!focus || focus.dataset.favDragWired) return;
+  focus.dataset.favDragWired = '1';
+  focus.addEventListener('click', function(ev){
+    if (favSquelch){ favSquelch = false; ev.stopPropagation(); ev.preventDefault(); }
+  }, true);
+  focus.addEventListener('pointerdown', favDown);
+  document.addEventListener('pointermove', favMove);
+  document.addEventListener('pointerup', favUp);
+  focus.addEventListener('pointercancel', favUp);
+  focus.addEventListener('contextmenu', function(ev){
+    if (document.body.classList.contains('f-fav')) ev.preventDefault();
+  });
 }
 function setPrintFoot(){
   const f = document.getElementById('printfoot');
@@ -1667,6 +1769,7 @@ async function unlock(){
     updateZuarbeitBadge();
     brcInit();
     fabInit();
+    favDragInit();
     updatePcStatus();
     updateSendBar();
     syncEditorView();
@@ -1676,6 +1779,7 @@ async function unlock(){
     document.body.classList.add('unlocked');
     applyFilter(localStorage.getItem('todoFilter') || '');
     applyFavFilter(localStorage.getItem('favFilter') === '1');
+    favApplyOrder();   // NACH applyFavFilter: braucht den f-fav-Status auf body
     if (offline) toast('offline \u2013 letzter Stand');
     flushQueue();
     flushAttQueue();
@@ -1714,6 +1818,7 @@ async function refresh(){
     updateZuarbeitBadge();
     brcInit();
     fabInit();
+    favDragInit();
     updatePcStatus();
     updateSendBar();
     const qel = document.getElementById('q'); if (qel) qel.value = '';
@@ -1721,6 +1826,7 @@ async function refresh(){
     syncEditorView();
     applyDueTimes();
     applyFavFilter(localStorage.getItem('favFilter') === '1');
+    favApplyOrder();   // NACH applyFavFilter: braucht den f-fav-Status auf body
     document.getElementById('fallback').style.display = 'none';
     const at = document.querySelector('.tab.active');
     if (at && at.dataset.pane === 'wiki' && WIKI && WIKI_STACK.length) {
