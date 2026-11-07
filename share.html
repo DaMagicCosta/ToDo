@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f1117">
+<script>(function(){try{var t=localStorage.getItem('theme');
+if(!t)t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();</script>
+<title>Geteilte ToDos</title>
+<style>
+  html[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0f1117; --surface:#161922; --surface-deep:#11141b; --surface-sub:#13161d;
+    --surface-elevated:#1f2937; --overlay:rgba(0,0,0,.55); --shadow:rgba(0,0,0,.5);
+    --border:#232733; --border-subtle:#2d333f;
+    --text:#e6e9ef; --text-muted:#9aa4b2; --text-dim:#a3acba; --text-dim2:#8b93a1;
+    --text-subtle:#7aa2a9; --text-soft:#cdd3df;
+    --accent:#2dd4bf; --accent-ink:#06231f; --link:#7dd3fc; --xref:#4fa8a0;
+    --danger:#f87171; --done:#4ade80;
+    --prio-mid:#fbbf24; --prio-mid-bg:#3a2f17;
+    --prio-lo:#5eead4; --sixt-bg:#1c1a12;
+    --search-hi-bg:#3b3a16; --search-hi-text:#fde68a; --toast-bg:#232733; --toast-text:#e6e9ef;
+    --card-radius:14px; --card-shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+  html[data-theme="light"]{
+    color-scheme: light;
+    --bg:#f6f7f9; --surface:#ffffff; --surface-deep:#eef0f3; --surface-sub:#f0f2f5;
+    --surface-elevated:#eceef2; --overlay:rgba(0,0,0,.45); --shadow:rgba(0,0,0,.18);
+    --border:#e2e5ea; --border-subtle:#d7dbe1;
+    --text:#1b1f27; --text-muted:#4b5563; --text-dim:#5b6472; --text-dim2:#6b7280;
+    --text-subtle:#4b7a82; --text-soft:#3a4150;
+    --accent:#0d9488; --accent-ink:#ffffff; --link:#0369a1; --xref:#1d7a72;
+    --danger:#dc2626; --done:#16a34a;
+    --prio-mid:#b45309; --prio-mid-bg:#fdf0dd;
+    --prio-lo:#0d9488; --sixt-bg:#fdf6e3;
+    --search-hi-bg:#fde68a; --search-hi-text:#713f12; --toast-bg:#2b303b; --toast-text:#f6f7f9;
+    --card-radius:14px; --card-shadow:0 1px 3px rgba(27,31,39,.10);
+  }
+
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); }
+  .gate { max-width:340px; margin:14vh auto 0; padding:0 24px; text-align:center; }
+  .gate h1 { font-size:20px; margin:0 0 16px; }
+  .gate input { width:100%; padding:12px; font-size:16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); margin-top:10px; }
+  .gate button { margin-top:12px; width:100%; padding:12px; border:0; border-radius:8px; background:var(--accent); color:var(--accent-ink); font-weight:600; font-size:15px; cursor:pointer; }
+  .err { color:var(--danger); font-size:13px; margin-top:10px; min-height:18px; }
+  #app { display:none; padding:14px 16px 88px; max-width:760px; margin:0 auto; }
+  h2.sec { font-size:15px; margin:18px 0 8px; color:var(--text-muted); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin:8px 0; cursor:pointer; }
+  .row { display:flex; align-items:flex-start; gap:9px; }
+  .chk { width:18px; height:18px; margin-top:2px; flex:none; }
+  .txt { flex:1; }
+  .txt.done { text-decoration:line-through; color:var(--text-dim2); }
+  .badge { display:inline-block; font-size:11px; padding:1px 6px; border-radius:6px; margin-left:6px; border:1px solid currentColor; }
+  .p-hoch { color:var(--danger); } .p-mittel { color:var(--prio-mid); } .p-niedrig { color:var(--prio-lo); }
+  .due { font-size:11px; color:var(--text-muted); margin-left:6px; }
+  .note { font-size:13px; color:var(--text-soft); margin-top:6px; padding-left:27px; }
+  .note p { margin:.25em 0; } .note ul { margin:.25em 0; padding-left:18px; }
+  .note code { font-family:inherit; font-size:inherit; background:transparent; border:0; padding:0; }
+  .lentry { margin:.3em 0; } .lts { font-weight:700; color:var(--accent); } .lbody { padding-left:14px; }
+  .subs { margin:6px 0 0 27px; }
+  .sub { display:flex; align-items:center; gap:8px; font-size:14px; padding:2px 0; }
+  .bar { position:fixed; left:0; right:0; bottom:0; display:flex; gap:8px; padding:10px 16px; background:var(--bg); border-top:1px solid var(--border); }
+  .bar button { flex:1; padding:12px; border:0; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; }
+  .b-new { background:var(--surface-elevated); color:var(--text); } .b-send { background:var(--accent); color:var(--accent-ink); }
+  .modal { display:none; position:fixed; inset:0; background:var(--overlay); align-items:center; justify-content:center; z-index:20; padding:16px; }
+  .box { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .box h3 { margin:0 0 10px; font-size:16px; }
+  .lab { display:block; font-size:11px; color:var(--text-muted); margin:10px 0 4px; }
+  .box input[type=text], .box input[type=date], .box select, .box textarea { width:100%; padding:9px 10px; font-size:15px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); }
+  .box textarea { min-height:90px; resize:vertical; font-family:inherit; }
+  .acts { display:flex; gap:8px; margin-top:14px; }
+  .acts button { flex:1; padding:11px; border:0; border-radius:8px; font-weight:600; cursor:pointer; }
+  .b-cancel { background:var(--surface-elevated); color:var(--text); } .b-ok { background:var(--accent); color:var(--accent-ink); }
+  #toast { position:fixed; bottom:74px; left:50%; transform:translateX(-50%); background:var(--toast-bg); color:var(--toast-text); padding:8px 14px; border-radius:8px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  #toast.show { opacity:1; }
+  .themebtn { background:transparent; border:0; color:var(--text-muted); cursor:pointer; font-size:18px; padding:0 4px; }
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <h1>Geteilte ToDos</h1>
+  <input id="name" type="text" placeholder="Dein Name" autocomplete="off">
+  <input id="code" type="text" inputmode="numeric" placeholder="Code" autocomplete="off">
+  <button onclick="unlock()">Öffnen</button>
+  <div class="err" id="err"></div>
+</div>
+<div id="app">
+  <div id="content"></div>
+  <div class="bar">
+    <button id="themebtn" class="themebtn" onclick="toggleTheme()" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">◐</button>
+    <button class="b-new" onclick="openNew()">+ Neu</button>
+    <button class="b-send" onclick="submitChanges()">Senden</button>
+  </div>
+</div>
+<div class="modal" id="editor">
+  <div class="box">
+    <h3>ToDo bearbeiten</h3>
+    <label class="lab">Text</label>
+    <input id="ed-text" type="text" autocomplete="off">
+    <label class="lab">Priorität</label>
+    <select id="ed-prio"><option value="">keine</option><option value="hoch">Hoch</option><option value="mittel">Mittel</option><option value="niedrig">Niedrig</option></select>
+    <label class="lab">Fälligkeit</label>
+    <input id="ed-due" type="date">
+    <label class="lab">Notiz</label>
+    <textarea id="ed-note"></textarea>
+    <div class="acts"><button class="b-cancel" onclick="closeEditor()">Abbrechen</button><button class="b-ok" onclick="applyEdit()">Speichern</button></div>
+  </div>
+</div>
+<div class="modal" id="newdlg">
+  <div class="box">
+    <h3>Neues ToDo</h3>
+    <label class="lab">Text</label>
+    <input id="nw-text" type="text" autocomplete="off">
+    <label class="lab">Bereich</label>
+    <select id="nw-area"></select>
+    <label class="lab">Priorität</label>
+    <select id="nw-prio"><option value="">keine</option><option value="hoch">Hoch</option><option value="mittel">Mittel</option><option value="niedrig">Niedrig</option></select>
+    <label class="lab">Fälligkeit</label>
+    <input id="nw-due" type="date">
+    <label class="lab">Notiz</label>
+    <textarea id="nw-note"></textarea>
+    <div class="acts"><button class="b-cancel" onclick="closeNew()">Abbrechen</button><button class="b-ok" onclick="saveNew()">Anlegen</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const SHARE_VERSION = "d029fef591e7";
+const hash = location.hash.replace(/^#/, '');
+const dot = hash.indexOf('.');
+const TOKEN = dot >= 0 ? hash.slice(0, dot) : '';
+const LINK_SECRET = dot >= 0 ? hash.slice(dot + 1) : '';
+let SHARE_KEY = null;
+let DATA = null;
+let INBOX = null;
+let AUTHOR = '';
+const EDITS = {};            // key area id -> {notebook,area,id,text,prio,due,note}
+let editRow = null;
+function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function shInline(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>'); }
+// Eintrags-Kopf-Erkennung — deckungsgleich mit note_md._entry_head (Python):
+// (a) Zeile genau **Kopf**; (b) **Kopf** + Rest, Kopf beginnt mit Datum TT.MM.;
+// (c) Stand-Zeile "(✅ )Stand TT.MM.…: Rest". Rueckgabe [kopf, bodyStart|null] oder null.
+function shEntryHead(line){
+  const s = line.trim();
+  let m = s.match(/^\*\*(.+)\*\*$/);
+  if (m && m[1].indexOf('**') < 0) return [m[1].trim(), null];
+  m = s.match(/^\*\*(\d{1,2}\.\d{1,2}\.[^*]*)\*\*\s*(\S.*)$/);
+  if (m && m[1].indexOf('**') < 0) return [m[1].trim(), m[2].trim()];
+  m = s.match(/^((?:\u2705|\u2714)\s*)?(Stand\s+\d{1,2}\.\d{1,2}\.(?:\d{2,4})?[^:]{0,60}):\s*(\S.*)$/);
+  if (m) return [m[2].trim(), m[3].trim()];   // Haken-Emoji bleibt in der Anzeige weg
+  return null;
+}
+function shBody(lines){
+  let h = '', inList = false, buf = [];
+  const flush = () => { if (buf.length){ h += '<p>' + buf.join('<br>') + '</p>'; buf = []; } };
+  lines.forEach(l => {
+    const m = l.match(/^\s*[-*]\s+(.*)$/);
+    if (m){ flush(); if (!inList){ h += '<ul>'; inList = true; } h += '<li>' + shInline(m[1]) + '</li>'; }
+    else { if (inList){ h += '</ul>'; inList = false; } if (l.trim()) buf.push(shInline(l)); }
+  });
+  if (inList) h += '</ul>';
+  flush();
+  return h;
+}
+function shNoteHtml(md){
+  if (!md) return '';
+  const lines = md.split('\n');
+  let h = '', plain = [];
+  const flushPlain = () => { if (plain.some(l => l.trim())) h += shBody(plain); plain = []; };
+  let i = 0;
+  while (i < lines.length){
+    const raw = lines[i];
+    const eh = shEntryHead(raw);
+    if (eh === null){ plain.push(raw); i++; continue; }
+    const body = eh[1] ? [eh[1]] : [];
+    i++;
+    while (i < lines.length && lines[i].trim() && shEntryHead(lines[i]) === null){ body.push(lines[i]); i++; }
+    if (!body.some(l => l.trim())){ plain.push(raw); continue; }   // Kopf ohne Body -> normaler Text
+    flushPlain();
+    h += '<div class="lentry"><div class="lts">' + esc(eh[0]) + '</div><div class="lbody">' + shBody(body) + '</div></div>';
+  }
+  flushPlain();
+  return h;
+}
+function toast(msg){ const e=document.getElementById('toast'); e.textContent=msg; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1700); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function localStamp(){ const d=new Date(); return pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+'.'+d.getFullYear()+' '+pad2(d.getHours())+':'+pad2(d.getMinutes()); }
+function b64(s){ return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+function b64bytes(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+async function decryptShare(p){
+  const enc = new TextEncoder();
+  const km = await crypto.subtle.importKey('raw', enc.encode(SHARE_KEY), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt:b64(p.salt), iterations:p.iter, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64(p.iv) }, key, b64(p.ct));
+  return new TextDecoder().decode(pt);
+}
+async function encryptShare(obj){
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const km = await crypto.subtle.importKey('raw', enc.encode(SHARE_KEY), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt, iterations:250000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['encrypt']);
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)));
+  return { salt:b64bytes(salt), iv:b64bytes(iv), ct:b64bytes(ct), iter:250000 };
+}
+async function post(sub){
+  const payload = await encryptShare(sub);
+  payload.share = TOKEN;
+  const r = await fetch(INBOX.url + '/inbox', {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer ' + INBOX.secret, 'Content-Type':'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) throw new Error('inbox ' + r.status);
+}
+function qkey(){ return 'shareQueue_' + TOKEN; }
+function loadQ(){ try { return JSON.parse(localStorage.getItem(qkey()) || '[]'); } catch(e){ return []; } }
+function saveQ(q){ try { localStorage.setItem(qkey(), JSON.stringify(q)); } catch(e){} }
+function enqueue(sub){ const q = loadQ(); q.push(sub); saveQ(q); }
+async function flushQueue(){
+  if (!INBOX || !INBOX.url) return;
+  const q = loadQ(); if (!q.length) return;
+  const rest = [];
+  for (const sub of q) { try { await post(sub); } catch(e){ rest.push(sub); } }
+  saveQ(rest);
+}
+async function sendOrQueue(sub){
+  try {
+    if (!INBOX || !INBOX.url) throw new Error('kein Worker');
+    await post(sub);
+    return true;
+  } catch(e){ enqueue(sub); return false; }
+}
+function newId(){ return Date.now() + '_' + crypto.randomUUID(); }
+async function unlock(){
+  const err = document.getElementById('err'); err.textContent = '';
+  const code = document.getElementById('code').value.trim();
+  AUTHOR = document.getElementById('name').value.trim();
+  if (!TOKEN || !LINK_SECRET){ err.textContent = 'Link unvollständig'; return; }
+  if (!code){ err.textContent = 'Code fehlt'; return; }
+  SHARE_KEY = LINK_SECRET + ':' + code;
+  try {
+    const r = await fetch('share-' + TOKEN + '.enc.json?t=' + Date.now(), { cache:'no-store' });
+    if (!r.ok) throw new Error('fetch');
+    const raw = await r.json();
+    DATA = JSON.parse(await decryptShare(raw));
+  } catch(e){ err.textContent = 'Falscher Code oder keine Verbindung'; return; }
+  INBOX = DATA.inbox && DATA.inbox.url ? DATA.inbox : null;
+  try { localStorage.setItem('shareName_' + TOKEN, AUTHOR); } catch(e){}
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  fillAreas();
+  render();
+  flushQueue();
+}
+function badges(t){
+  let h = '';
+  if (t.prio) h += '<span class="badge p-' + esc(t.prio) + '">' + esc(t.prio) + '</span>';
+  if (t.due) h += '<span class="due">' + esc(t.due) + '</span>';
+  return h;
+}
+function cardHtml(sec, t){
+  let subs = '';
+  (t.subtasks || []).forEach(s => {
+    subs += '<div class="sub" data-notebook="' + esc(sec.notebook) + '" data-area="' + esc(sec.area) + '" data-id="' + esc(s.id) + '" data-done="' + (s.done?'1':'0') + '">'
+      + '<input type="checkbox" class="chk"' + (s.done?' checked':'') + '>'
+      + '<span class="txt' + (s.done?' done':'') + '">' + esc(s.text) + '</span></div>'
+      + (s.note ? '<div class="note">' + shNoteHtml(s.note) + '</div>' : '');
+  });
+  const note = t.note ? '<div class="note">' + shNoteHtml(t.note) + '</div>' : '';
+  return '<div class="card" data-notebook="' + esc(sec.notebook) + '" data-area="' + esc(sec.area) + '" data-id="' + esc(t.id) + '"'
+    + ' data-done="' + (t.done?'1':'0') + '" data-prio="' + esc(t.prio||'') + '" data-due="' + esc(t.due||'') + '" data-note="' + esc(t.note||'') + '">'
+    + '<div class="row"><input type="checkbox" class="chk"' + (t.done?' checked':'') + '>'
+    + '<span class="txt' + (t.done?' done':'') + '">' + esc(t.text) + '</span>' + badges(t) + '</div>'
+    + note
+    + (subs ? '<div class="subs">' + subs + '</div>' : '')
+    + '</div>';
+}
+function render(){
+  const c = document.getElementById('content');
+  let h = '';
+  (DATA.sections || []).forEach(sec => {
+    h += '<h2 class="sec">' + esc(sec.label || sec.area) + '</h2>';
+    if (!sec.todos.length) h += '<div class="note">— leer —</div>';
+    sec.todos.forEach(t => { h += cardHtml(sec, t); });
+  });
+  c.innerHTML = h || '<p>Nichts freigegeben.</p>';
+}
+function fillAreas(){
+  const sel = document.getElementById('nw-area');
+  sel.innerHTML = (DATA.sections || []).map(sec =>
+    '<option value="' + esc(sec.notebook) + ' ' + esc(sec.area) + '">' + esc(sec.label || sec.area) + '</option>').join('');
+}
+// Klick auf Karte (nicht Checkbox) -> bearbeiten
+document.addEventListener('click', e => {
+  if (e.target.closest('.chk')) return;
+  const card = e.target.closest('#content .card');
+  if (card) openEdit(card);
+});
+function openEdit(card){
+  const d = card.dataset;
+  editRow = { notebook:d.notebook, area:d.area, id:d.id };
+  const txt = card.querySelector('.txt');
+  document.getElementById('ed-text').value = txt ? txt.textContent : d.id;
+  document.getElementById('ed-prio').value = d.prio || '';
+  document.getElementById('ed-due').value = d.due || '';
+  document.getElementById('ed-note').value = d.note || '';
+  document.getElementById('editor').style.display = 'flex';
+}
+function closeEditor(){ document.getElementById('editor').style.display = 'none'; editRow = null; }
+function applyEdit(){
+  if (!editRow) return;
+  const op = { notebook:editRow.notebook, area:editRow.area, id:editRow.id,
+    text:document.getElementById('ed-text').value.trim(),
+    prio:document.getElementById('ed-prio').value,
+    due:document.getElementById('ed-due').value,
+    note:document.getElementById('ed-note').value };
+  EDITS[editRow.area + ' ' + editRow.id] = op;
+  // optimistisch in der Karte spiegeln (Iteration statt Selektor -> robust gegen Sonderzeichen)
+  document.querySelectorAll('#content .card').forEach(card => {
+    if (card.dataset.area === editRow.area && card.dataset.id === editRow.id){
+      card.querySelector('.txt').textContent = op.text;
+      card.dataset.prio = op.prio; card.dataset.due = op.due; card.dataset.note = op.note;
+    }
+  });
+  closeEditor();
+  toast('gemerkt — zum Senden „Senden"');
+}
+function openNew(){
+  document.getElementById('nw-text').value = '';
+  document.getElementById('nw-prio').value = '';
+  document.getElementById('nw-due').value = '';
+  document.getElementById('nw-note').value = '';
+  document.getElementById('newdlg').style.display = 'flex';
+}
+function closeNew(){ document.getElementById('newdlg').style.display = 'none'; }
+async function saveNew(){
+  const text = document.getElementById('nw-text').value.trim();
+  if (!text){ toast('Text fehlt'); return; }
+  const av = document.getElementById('nw-area').value.split(' ');
+  const op = { notebook:av[0], area:av[1], text, created:new Date().toLocaleDateString('sv') };
+  const prio = document.getElementById('nw-prio').value; if (prio) op.prio = prio;
+  const due = document.getElementById('nw-due').value; if (due) op.due = due;
+  const note = document.getElementById('nw-note').value; if (note.trim()) op.note = note;
+  closeNew();
+  const ok = await sendOrQueue({ id:newId(), author:AUTHOR, ts:localStamp(), adds:[op] });
+  toast(ok ? 'angelegt' : 'offline — gespeichert');
+}
+async function submitChanges(){
+  const done = [], reopen = [], edits = [];
+  document.querySelectorAll('#content .chk').forEach(c => {
+    const el = c.closest('[data-id]'); if (!el || el.classList.contains('pending')) return;
+    const d = el.dataset;
+    const wasDone = d.done === '1';
+    if (c.checked && !wasDone) done.push({ notebook:d.notebook, area:d.area, id:d.id });
+    else if (!c.checked && wasDone) reopen.push({ notebook:d.notebook, area:d.area, id:d.id });
+  });
+  Object.values(EDITS).forEach(e => edits.push(e));
+  if (!done.length && !reopen.length && !edits.length){ toast('nichts ausstehend'); return; }
+  const ok = await sendOrQueue({ id:newId(), author:AUTHOR, ts:localStamp(), done, reopen, edits });
+  // optimistisch: data-done angleichen, EDITS leeren
+  done.forEach(o => { document.querySelectorAll('#content [data-id]').forEach(el => { if (el.dataset.area===o.area && el.dataset.id===o.id){ el.dataset.done='1'; const t=el.querySelector('.txt'); if(t)t.classList.add('done'); } }); });
+  reopen.forEach(o => { document.querySelectorAll('#content [data-id]').forEach(el => { if (el.dataset.area===o.area && el.dataset.id===o.id){ el.dataset.done='0'; const t=el.querySelector('.txt'); if(t)t.classList.remove('done'); } }); });
+  Object.keys(EDITS).forEach(k => delete EDITS[k]);
+  toast(ok ? 'gesendet' : 'offline — gespeichert');
+}
+window.addEventListener('online', flushQueue);
+// Namen aus früherem Besuch vorbefüllen
+try { const n = localStorage.getItem('shareName_' + TOKEN); if (n) document.getElementById('name').value = n; } catch(e){}
+function applyThemeColor(){var d=document.documentElement.dataset.theme;
+var c=d==='light'?'#f6f7f9':'#0f1117';var m=document.querySelector('meta[name=theme-color]');
+if(m)m.setAttribute('content',c);}
+function toggleTheme(){var h=document.documentElement;
+var t=h.dataset.theme==='light'?'dark':'light';h.dataset.theme=t;
+try{localStorage.setItem('theme',t);}catch(e){}applyThemeColor();}
+applyThemeColor();
+</script>
+</body>
+</html>
